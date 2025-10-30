@@ -8,7 +8,7 @@ import {
   FileEdit,
   Search,
 } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
 
 const menuItems = [
@@ -34,7 +34,7 @@ export function TopNav() {
             {menuItems.map((item) => {
               const isActive = location === item.url;
               return (
-                <a
+                <Link
                   key={item.url}
                   href={item.url}
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors hover-elevate ${
@@ -46,7 +46,7 @@ export function TopNav() {
                 >
                   <item.icon className="h-4 w-4" />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               );
             })}
           </div>

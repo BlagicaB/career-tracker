@@ -6,12 +6,14 @@ import {
   FileText,
   LayoutDashboard,
   FileEdit,
+  Search,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Job Search", url: "/job-search", icon: Search },
   { title: "Applications", url: "/applications", icon: Briefcase },
   { title: "Networking", url: "/networking", icon: Users },
   { title: "Skills", url: "/skills", icon: Award },

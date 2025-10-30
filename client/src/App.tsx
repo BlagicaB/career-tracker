@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopNav } from "@/components/TopNav";
 import Dashboard from "@/pages/Dashboard";
+import JobSearch from "@/pages/JobSearch";
 import Applications from "@/pages/Applications";
 import Networking from "@/pages/Networking";
 import Skills from "@/pages/Skills";
@@ -17,6 +18,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/job-search" component={JobSearch} />
       <Route path="/applications" component={Applications} />
       <Route path="/networking" component={Networking} />
       <Route path="/skills" component={Skills} />

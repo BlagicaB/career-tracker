@@ -39,6 +39,9 @@ export function AddApplicationDialog({
     jobUrl: "",
     referral: "",
     notes: "",
+    jobType: "",
+    resumeId: "",
+    coverLetterId: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,6 +59,9 @@ export function AddApplicationDialog({
       jobUrl: "",
       referral: "",
       notes: "",
+      jobType: "",
+      resumeId: "",
+      coverLetterId: "",
     });
   };
 
@@ -185,6 +191,67 @@ export function AddApplicationDialog({
                 }
                 data-testid="input-referral"
               />
+            </div>
+
+            <div className="grid grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="jobType">Job Type</Label>
+                <Select
+                  value={formData.jobType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, jobType: value })
+                  }
+                >
+                  <SelectTrigger id="jobType" data-testid="select-job-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="frontend">Frontend</SelectItem>
+                    <SelectItem value="backend">Backend</SelectItem>
+                    <SelectItem value="fullstack">Full Stack</SelectItem>
+                    <SelectItem value="devops">DevOps</SelectItem>
+                    <SelectItem value="mobile">Mobile</SelectItem>
+                    <SelectItem value="data">Data</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="resumeId">Resume</Label>
+                <Select
+                  value={formData.resumeId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, resumeId: value })
+                  }
+                >
+                  <SelectTrigger id="resumeId" data-testid="select-resume">
+                    <SelectValue placeholder="Select resume" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Software Engineer Resume - 2024</SelectItem>
+                    <SelectItem value="2">Frontend Specialist Resume</SelectItem>
+                    <SelectItem value="3">General Tech Resume</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="coverLetterId">Cover Letter</Label>
+                <Select
+                  value={formData.coverLetterId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, coverLetterId: value })
+                  }
+                >
+                  <SelectTrigger id="coverLetterId" data-testid="select-cover-letter">
+                    <SelectValue placeholder="Select cover letter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Senior Software Engineer Cover Letter</SelectItem>
+                    <SelectItem value="2">Frontend Specialist Cover Letter</SelectItem>
+                    <SelectItem value="3">General Tech Role Cover Letter</SelectItem>
+                    <SelectItem value="4">DevOps Engineer Cover Letter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">

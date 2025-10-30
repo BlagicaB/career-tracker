@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Calendar, TrendingUp } from "lucide-react";
+import { MoreHorizontal, Calendar } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,16 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
-
-export interface Goal {
-  id: string;
-  title: string;
-  description?: string;
-  category: "application" | "skill" | "networking" | "career";
-  progress: number;
-  targetDate?: Date;
-  status: "in-progress" | "completed" | "paused";
-}
+import type { Goal } from "@shared/schema";
 
 interface GoalCardProps {
   goal: Goal;
@@ -26,17 +17,20 @@ interface GoalCardProps {
   onDelete?: (id: string) => void;
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
+  "not-started": "bg-gray-500/10 text-gray-700 dark:text-gray-400",
   "in-progress": "bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  completed: "bg-green-500/10 text-green-700 dark:text-green-400",
-  paused: "bg-gray-500/10 text-gray-700 dark:text-gray-400",
+  "completed": "bg-green-500/10 text-green-700 dark:text-green-400",
+  "on-hold": "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
 };
 
-const categoryColors = {
-  application: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
-  skill: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  networking: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  career: "bg-green-500/10 text-green-700 dark:text-green-400",
+const categoryColors: Record<string, string> = {
+  "Career Growth": "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+  "Learning": "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  "Networking": "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  "Job Search": "bg-green-500/10 text-green-700 dark:text-green-400",
+  "Skills": "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400",
+  "Personal Development": "bg-pink-500/10 text-pink-700 dark:text-pink-400",
 };
 
 export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
@@ -78,12 +72,12 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
       </div>
 
       <div className="space-y-4">
-        <div className="flex gap-2">
-          <Badge className={`${categoryColors[goal.category]} text-xs px-2 py-1 font-mono`} data-testid={`badge-category-${goal.id}`}>
+        <div className="flex gap-2 flex-wrap">
+          <Badge className={`${categoryColors[goal.category] || "bg-gray-500/10 text-gray-700 dark:text-gray-400"} text-xs px-2 py-1 font-mono`} data-testid={`badge-category-${goal.id}`}>
             {goal.category}
           </Badge>
-          <Badge className={`${statusColors[goal.status]} text-xs px-2 py-1 font-mono`} data-testid={`badge-status-${goal.id}`}>
-            {goal.status}
+          <Badge className={`${statusColors[goal.status] || "bg-gray-500/10 text-gray-700 dark:text-gray-400"} text-xs px-2 py-1 font-mono`} data-testid={`badge-status-${goal.id}`}>
+            {goal.status.replace("-", " ")}
           </Badge>
         </div>
 
@@ -105,7 +99,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
             <span data-testid={`text-target-date-${goal.id}`}>
-              Target: {format(goal.targetDate, "MMM d, yyyy")}
+              Target: {format(new Date(goal.targetDate), "MMM d, yyyy")}
             </span>
           </div>
         )}

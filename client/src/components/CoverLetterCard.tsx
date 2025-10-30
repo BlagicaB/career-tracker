@@ -3,15 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileEdit, Eye, Copy, Trash2, Download } from "lucide-react";
 import { format } from "date-fns";
+import type { CoverLetter } from "@shared/schema";
 
-export interface CoverLetter {
-  id: string;
-  title: string;
-  company?: string;
-  role?: string;
-  createdDate: Date;
-  lastModified: Date;
-  tags?: string[];
+export interface CoverLetterWithApplications extends CoverLetter {
   linkedApplications?: {
     id: string;
     company: string;
@@ -20,11 +14,11 @@ export interface CoverLetter {
 }
 
 interface CoverLetterCardProps {
-  coverLetter: CoverLetter;
-  onView?: (coverLetter: CoverLetter) => void;
-  onEdit?: (coverLetter: CoverLetter) => void;
-  onCopy?: (coverLetter: CoverLetter) => void;
-  onDownload?: (coverLetter: CoverLetter) => void;
+  coverLetter: CoverLetterWithApplications;
+  onView?: (coverLetter: CoverLetterWithApplications) => void;
+  onEdit?: (coverLetter: CoverLetterWithApplications) => void;
+  onCopy?: (coverLetter: CoverLetterWithApplications) => void;
+  onDownload?: (coverLetter: CoverLetterWithApplications) => void;
   onDelete?: (id: string) => void;
 }
 

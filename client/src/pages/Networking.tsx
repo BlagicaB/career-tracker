@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { ContactCard, Contact } from "@/components/ContactCard";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { ContactCard } from "@/components/ContactCard";
+import { AddContactDialog } from "@/components/AddContactDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,71 +11,84 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter } from "lucide-react";
-
-const mockContacts: Contact[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    title: "Engineering Manager",
-    company: "Tech Corp",
-    email: "sarah@techcorp.com",
-    linkedinUrl: "https://linkedin.com/in/sarahjohnson",
-    howMet: "Conference",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    title: "Senior Developer",
-    company: "StartupXYZ",
-    email: "michael@startupxyz.com",
-    linkedinUrl: "https://linkedin.com/in/michaelchen",
-    howMet: "Referral",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Emma Davis",
-    title: "Recruiter",
-    company: "BigTech Inc",
-    email: "emma@bigtech.com",
-    howMet: "LinkedIn",
-    status: "pending",
-  },
-  {
-    id: "4",
-    name: "Alex Rodriguez",
-    title: "CTO",
-    company: "Design Co",
-    linkedinUrl: "https://linkedin.com/in/alexrodriguez",
-    howMet: "Meetup",
-    status: "active",
-  },
-  {
-    id: "5",
-    name: "Lisa Wang",
-    title: "Product Manager",
-    company: "Cloud Systems",
-    email: "lisa@cloudsystems.com",
-    howMet: "Former Colleague",
-    status: "inactive",
-  },
-  {
-    id: "6",
-    name: "David Kim",
-    title: "VP Engineering",
-    company: "AI Startup",
-    email: "david@aistartup.com",
-    linkedinUrl: "https://linkedin.com/in/davidkim",
-    howMet: "Coffee Chat",
-    status: "active",
-  },
-];
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Search, Filter, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Contact } from "@shared/schema";
 
 export default function Networking() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const { toast } = useToast();
+
+  const { data: contacts, isLoading } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/contacts/${id}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Contact deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete contact",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const filteredContacts = useMemo(() => {
+    if (!contacts) return [];
+
+    return contacts.filter((contact) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.title.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" || contact.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [contacts, searchQuery, statusFilter]);
+
+  const handleEdit = (contact: Contact) => {
+    setEditingContact(contact);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this contact?")) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleAddContact = () => {
+    setEditingContact(null);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingContact(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -84,7 +99,7 @@ export default function Networking() {
             Manage your professional contacts and relationships
           </p>
         </div>
-        <Button data-testid="button-add-contact">
+        <Button onClick={handleAddContact} data-testid="button-add-contact">
           <Plus className="h-4 w-4 mr-2" />
           Add Contact
         </Button>
@@ -117,11 +132,68 @@ export default function Networking() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockContacts.map((contact) => (
-          <ContactCard key={contact.id} contact={contact} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-6 w-20" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 flex-1" />
+                  <Skeleton className="h-8 flex-1" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : filteredContacts.length === 0 ? (
+        <Card className="p-12">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="rounded-full bg-muted p-6 mb-4">
+              <Users className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">
+              {contacts?.length === 0 ? "No contacts yet" : "No contacts found"}
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {contacts?.length === 0
+                ? "Start building your professional network by adding your first contact."
+                : "Try adjusting your search or filter to find the contacts you're looking for."}
+            </p>
+            {contacts?.length === 0 && (
+              <Button onClick={handleAddContact} data-testid="button-add-first-contact">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Contact
+              </Button>
+            )}
+          </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredContacts.map((contact) => (
+            <ContactCard
+              key={contact.id}
+              contact={contact}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+
+      <AddContactDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogClose}
+        editingContact={editingContact}
+      />
     </div>
   );
 }

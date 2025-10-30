@@ -1,55 +1,57 @@
-import { CoverLetterCard, CoverLetter } from "@/components/CoverLetterCard";
+import { CoverLetterCard, type CoverLetterWithApplications } from "@/components/CoverLetterCard";
+import { AddCoverLetterDialog } from "@/components/AddCoverLetterDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search } from "lucide-react";
-import { useState } from "react";
-
-const mockCoverLetters: CoverLetter[] = [
-  {
-    id: "1",
-    title: "Senior Software Engineer Cover Letter",
-    company: "Tech Corp",
-    role: "Senior Software Engineer",
-    createdDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-    lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    tags: ["Technical", "Leadership", "Full Stack"],
-    linkedApplications: [
-      { id: "1", company: "Tech Corp", role: "Senior Software Engineer" },
-    ],
-  },
-  {
-    id: "2",
-    title: "Frontend Specialist Cover Letter",
-    company: "StartupXYZ",
-    role: "Frontend Developer",
-    createdDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    lastModified: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-    tags: ["Frontend", "React", "UI/UX"],
-    linkedApplications: [
-      { id: "2", company: "StartupXYZ", role: "Full Stack Developer" },
-      { id: "3", company: "BigTech Inc", role: "Frontend Engineer" },
-    ],
-  },
-  {
-    id: "3",
-    title: "General Tech Role Cover Letter",
-    createdDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-    lastModified: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
-    tags: ["General", "Adaptable"],
-  },
-  {
-    id: "4",
-    title: "DevOps Engineer Cover Letter",
-    company: "Cloud Systems",
-    role: "DevOps Engineer",
-    createdDate: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-    lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    tags: ["DevOps", "Cloud", "Infrastructure"],
-  },
-];
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { CoverLetter, Application } from "@shared/schema";
 
 export default function CoverLetters() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const { data: coverLetters, isLoading: coverLettersLoading } = useQuery<CoverLetter[]>({
+    queryKey: ["/api/cover-letters"],
+  });
+
+  const { data: applications } = useQuery<Application[]>({
+    queryKey: ["/api/applications"],
+  });
+
+  const coverLettersWithApplications = useMemo<CoverLetterWithApplications[]>(() => {
+    if (!coverLetters) return [];
+
+    return coverLetters.map((coverLetter) => {
+      const linkedApplications = applications
+        ?.filter((app) => app.coverLetterId === coverLetter.id)
+        .map((app) => ({
+          id: app.id,
+          company: app.company,
+          role: app.role,
+        })) || [];
+
+      return {
+        ...coverLetter,
+        linkedApplications: linkedApplications.length > 0 ? linkedApplications : undefined,
+      };
+    });
+  }, [coverLetters, applications]);
+
+  const filteredCoverLetters = useMemo(() => {
+    if (!searchQuery) return coverLettersWithApplications;
+
+    const query = searchQuery.toLowerCase();
+    return coverLettersWithApplications.filter((coverLetter) => {
+      return (
+        coverLetter.title.toLowerCase().includes(query) ||
+        coverLetter.company?.toLowerCase().includes(query) ||
+        coverLetter.role?.toLowerCase().includes(query) ||
+        coverLetter.tags?.some((tag) => tag.toLowerCase().includes(query))
+      );
+    });
+  }, [coverLettersWithApplications, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -60,7 +62,7 @@ export default function CoverLetters() {
             Create and manage cover letters for different job applications
           </p>
         </div>
-        <Button data-testid="button-add-cover-letter">
+        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-cover-letter">
           <Plus className="h-4 w-4 mr-2" />
           New Cover Letter
         </Button>
@@ -81,11 +83,41 @@ export default function CoverLetters() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockCoverLetters.map((coverLetter) => (
-          <CoverLetterCard key={coverLetter.id} coverLetter={coverLetter} />
-        ))}
-      </div>
+      {coverLettersLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-64" data-testid={`skeleton-${i}`} />
+          ))}
+        </div>
+      ) : filteredCoverLetters.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12" data-testid="empty-state">
+          <div className="p-6 rounded-full bg-muted mb-4">
+            <Plus className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">
+            {searchQuery ? "No cover letters found" : "No cover letters yet"}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {searchQuery
+              ? "Try adjusting your search query"
+              : "Get started by creating your first cover letter"}
+          </p>
+          {!searchQuery && (
+            <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-first">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Cover Letter
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCoverLetters.map((coverLetter) => (
+            <CoverLetterCard key={coverLetter.id} coverLetter={coverLetter} />
+          ))}
+        </div>
+      )}
+
+      <AddCoverLetterDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </div>
   );
 }

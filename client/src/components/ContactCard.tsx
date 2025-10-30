@@ -9,18 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-export interface Contact {
-  id: string;
-  name: string;
-  title: string;
-  company: string;
-  email?: string;
-  linkedinUrl?: string;
-  howMet?: string;
-  status: "active" | "inactive" | "pending";
-  notes?: string;
-}
+import type { Contact } from "@shared/schema";
 
 interface ContactCardProps {
   contact: Contact;
@@ -29,7 +18,7 @@ interface ContactCardProps {
   onDelete?: (id: string) => void;
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   active: "bg-green-500/10 text-green-700 dark:text-green-400",
   inactive: "bg-gray-500/10 text-gray-700 dark:text-gray-400",
   pending: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
@@ -117,7 +106,7 @@ export function ContactCard({
               variant="outline"
               size="sm"
               className="flex-1"
-              onClick={() => window.open(`mailto:${contact.email}`)}
+              onClick={() => window.open(`mailto:${contact.email}`, "_self")}
               data-testid={`button-email-${contact.id}`}
             >
               <Mail className="h-3 w-3 mr-2" />
@@ -129,7 +118,7 @@ export function ContactCard({
               variant="outline"
               size="sm"
               className="flex-1"
-              onClick={() => window.open(contact.linkedinUrl, "_blank")}
+              onClick={() => window.open(contact.linkedinUrl || "", "_blank")}
               data-testid={`button-linkedin-${contact.id}`}
             >
               <Linkedin className="h-3 w-3 mr-2" />

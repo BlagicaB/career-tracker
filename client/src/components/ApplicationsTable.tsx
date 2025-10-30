@@ -14,21 +14,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
+import type { Application } from "@shared/schema";
 
-export interface Application {
-  id: string;
-  company: string;
-  role: string;
-  location: string;
-  status: "applied" | "interviewing" | "offer" | "rejected";
-  priority: "high" | "medium" | "low";
-  appliedDate: Date;
-  salary?: string;
-  jobUrl?: string;
-  referral?: string;
-  nextFollowUp?: Date;
-  offerAmount?: string;
-}
+export type { Application };
 
 interface ApplicationsTableProps {
   applications: Application[];
@@ -37,14 +25,14 @@ interface ApplicationsTableProps {
   onDelete?: (id: string) => void;
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   applied: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   interviewing: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
   offer: "bg-green-500/10 text-green-700 dark:text-green-400",
   rejected: "bg-red-500/10 text-red-700 dark:text-red-400",
 };
 
-const priorityColors = {
+const priorityColors: Record<string, string> = {
   high: "bg-red-500/10 text-red-700 dark:text-red-400",
   medium: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
   low: "bg-gray-500/10 text-gray-700 dark:text-gray-400",
@@ -121,7 +109,7 @@ export function ApplicationsTable({
                 </td>
                 <td className="py-3 px-4" data-testid={`text-role-${app.id}`}>{app.role}</td>
                 <td className="py-3 px-4 text-muted-foreground" data-testid={`text-location-${app.id}`}>
-                  {app.location}
+                  {app.location || "-"}
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex justify-center">
@@ -144,7 +132,7 @@ export function ApplicationsTable({
                   </div>
                 </td>
                 <td className="py-3 px-4 text-center font-mono text-muted-foreground" data-testid={`text-applied-${app.id}`}>
-                  {formatDistanceToNow(app.appliedDate, { addSuffix: true })}
+                  {formatDistanceToNow(new Date(app.appliedDate), { addSuffix: true })}
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex justify-end">

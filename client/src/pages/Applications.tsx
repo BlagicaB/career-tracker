@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ApplicationsTable, Application } from "@/components/ApplicationsTable";
+import { useQuery } from "@tanstack/react-query";
+import { ApplicationsTable } from "@/components/ApplicationsTable";
 import { AddApplicationDialog } from "@/components/AddApplicationDialog";
 import { JobTypeOverview } from "@/components/JobTypeOverview";
 import { Button } from "@/components/ui/button";
@@ -12,65 +13,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Filter } from "lucide-react";
-
-const mockApplications: Application[] = [
-  {
-    id: "1",
-    company: "Tech Corp",
-    role: "Senior Software Engineer",
-    location: "San Francisco, CA",
-    status: "interviewing",
-    priority: "high",
-    appliedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    salary: "$150k - $200k",
-    jobUrl: "https://example.com/job/1",
-  },
-  {
-    id: "2",
-    company: "StartupXYZ",
-    role: "Full Stack Developer",
-    location: "Remote",
-    status: "applied",
-    priority: "medium",
-    appliedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    salary: "$120k - $160k",
-  },
-  {
-    id: "3",
-    company: "BigTech Inc",
-    role: "Frontend Engineer",
-    location: "New York, NY",
-    status: "offer",
-    priority: "high",
-    appliedDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    offerAmount: "$180k",
-  },
-  {
-    id: "4",
-    company: "Design Co",
-    role: "UI Engineer",
-    location: "Austin, TX",
-    status: "applied",
-    priority: "low",
-    appliedDate: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-    salary: "$130k - $150k",
-  },
-  {
-    id: "5",
-    company: "Cloud Systems",
-    role: "DevOps Engineer",
-    location: "Seattle, WA",
-    status: "rejected",
-    priority: "medium",
-    appliedDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-  },
-];
+import { queryClient } from "@/lib/queryClient";
+import type { Application } from "@shared/schema";
 
 export default function Applications() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+
+  const { data: applications = [], isLoading } = useQuery<Application[]>({
+    queryKey: ["/api/applications"],
+  });
+
+  const handleApplicationSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold mb-2">Job Applications</h1>
+            <p className="text-muted-foreground">
+              Track and manage all your job applications
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading applications...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -128,9 +104,13 @@ export default function Applications() {
         </Select>
       </div>
 
-      <ApplicationsTable applications={mockApplications} />
+      <ApplicationsTable applications={applications} />
 
-      <AddApplicationDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <AddApplicationDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen}
+        onSuccess={handleApplicationSuccess}
+      />
     </div>
   );
 }

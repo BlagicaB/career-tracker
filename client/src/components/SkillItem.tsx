@@ -1,12 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
-
-export interface Skill {
-  id: string;
-  name: string;
-  category: string;
-  proficiency: number;
-}
+import type { Skill } from "@shared/schema";
 
 interface SkillItemProps {
   skill: Skill;

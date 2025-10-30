@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,18 +18,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { InsertApplication, Resume, CoverLetter } from "@shared/schema";
 
 interface AddApplicationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (data: any) => void;
+  onSuccess?: () => void;
 }
 
 export function AddApplicationDialog({
   open,
   onOpenChange,
-  onSubmit,
+  onSuccess,
 }: AddApplicationDialogProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     company: "",
     role: "",
@@ -44,11 +49,38 @@ export function AddApplicationDialog({
     coverLetterId: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Add application submitted:", formData);
-    if (onSubmit) onSubmit(formData);
-    onOpenChange(false);
+  const { data: resumes, isLoading: resumesLoading } = useQuery<Resume[]>({
+    queryKey: ["/api/resumes"],
+  });
+
+  const { data: coverLetters, isLoading: coverLettersLoading } = useQuery<CoverLetter[]>({
+    queryKey: ["/api/cover-letters"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: InsertApplication) => {
+      const res = await apiRequest("POST", "/api/applications", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Application added successfully",
+      });
+      resetForm();
+      onOpenChange(false);
+      if (onSuccess) onSuccess();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add application",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetForm = () => {
     setFormData({
       company: "",
       role: "",
@@ -63,6 +95,27 @@ export function AddApplicationDialog({
       resumeId: "",
       coverLetterId: "",
     });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const applicationData: InsertApplication = {
+      company: formData.company,
+      role: formData.role,
+      location: formData.location || undefined,
+      status: formData.status,
+      priority: formData.priority,
+      salary: formData.salary || undefined,
+      jobUrl: formData.jobUrl || undefined,
+      referral: formData.referral || undefined,
+      notes: formData.notes || undefined,
+      jobType: formData.jobType || undefined,
+      resumeId: formData.resumeId || undefined,
+      coverLetterId: formData.coverLetterId || undefined,
+    };
+    
+    createMutation.mutate(applicationData);
   };
 
   return (
@@ -224,12 +277,18 @@ export function AddApplicationDialog({
                   }
                 >
                   <SelectTrigger id="resumeId" data-testid="select-resume">
-                    <SelectValue placeholder="Select resume" />
+                    <SelectValue placeholder={resumesLoading ? "Loading..." : "Select resume"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Software Engineer Resume - 2024</SelectItem>
-                    <SelectItem value="2">Frontend Specialist Resume</SelectItem>
-                    <SelectItem value="3">General Tech Resume</SelectItem>
+                    {!resumesLoading && (!resumes || resumes.length === 0) ? (
+                      <SelectItem value="none" disabled>No resumes available</SelectItem>
+                    ) : (
+                      resumes?.map((resume) => (
+                        <SelectItem key={resume.id} value={resume.id}>
+                          {resume.title}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -242,13 +301,18 @@ export function AddApplicationDialog({
                   }
                 >
                   <SelectTrigger id="coverLetterId" data-testid="select-cover-letter">
-                    <SelectValue placeholder="Select cover letter" />
+                    <SelectValue placeholder={coverLettersLoading ? "Loading..." : "Select cover letter"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Senior Software Engineer Cover Letter</SelectItem>
-                    <SelectItem value="2">Frontend Specialist Cover Letter</SelectItem>
-                    <SelectItem value="3">General Tech Role Cover Letter</SelectItem>
-                    <SelectItem value="4">DevOps Engineer Cover Letter</SelectItem>
+                    {!coverLettersLoading && (!coverLetters || coverLetters.length === 0) ? (
+                      <SelectItem value="none" disabled>No cover letters available</SelectItem>
+                    ) : (
+                      coverLetters?.map((coverLetter) => (
+                        <SelectItem key={coverLetter.id} value={coverLetter.id}>
+                          {coverLetter.title}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -274,12 +338,13 @@ export function AddApplicationDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={createMutation.isPending}
               data-testid="button-cancel"
             >
               Cancel
             </Button>
-            <Button type="submit" data-testid="button-submit">
-              Add Application
+            <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit">
+              {createMutation.isPending ? "Adding..." : "Add Application"}
             </Button>
           </DialogFooter>
         </form>

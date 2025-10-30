@@ -1,42 +1,41 @@
-import { ResumeCard, Resume } from "@/components/ResumeCard";
+import { ResumeCard } from "@/components/ResumeCard";
+import { AddResumeDialog } from "@/components/AddResumeDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText } from "lucide-react";
-import { useState } from "react";
-
-const mockResumes: Resume[] = [
-  {
-    id: "1",
-    title: "Software Engineer Resume - 2024",
-    uploadDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    fileSize: "245 KB",
-    tags: ["Technical", "Senior Level", "Full Stack"],
-    linkedApplications: [
-      { id: "1", company: "Tech Corp", role: "Senior Software Engineer" },
-      { id: "3", company: "BigTech Inc", role: "Frontend Engineer" },
-    ],
-  },
-  {
-    id: "2",
-    title: "Frontend Specialist Resume",
-    uploadDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    fileSize: "198 KB",
-    tags: ["Frontend", "React", "UI/UX"],
-    linkedApplications: [
-      { id: "2", company: "StartupXYZ", role: "Full Stack Developer" },
-    ],
-  },
-  {
-    id: "3",
-    title: "General Tech Resume",
-    uploadDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    fileSize: "220 KB",
-    tags: ["General", "Mid Level"],
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { Upload, FileText, Plus } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { Resume, Application } from "@shared/schema";
 
 export default function Resumes() {
   const [dragActive, setDragActive] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data: resumes, isLoading: resumesLoading } = useQuery<Resume[]>({
+    queryKey: ["/api/resumes"],
+  });
+
+  const { data: applications, isLoading: applicationsLoading } = useQuery<Application[]>({
+    queryKey: ["/api/applications"],
+  });
+
+  const resumesWithLinkedApps = useMemo(() => {
+    if (!resumes || !applications) return [];
+    
+    return resumes.map((resume) => ({
+      ...resume,
+      linkedApplications: applications
+        .filter((app) => app.resumeId === resume.id)
+        .map((app) => ({
+          id: app.id,
+          company: app.company,
+          role: app.role,
+        })),
+    }));
+  }, [resumes, applications]);
+
+  const isLoading = resumesLoading || applicationsLoading;
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -63,11 +62,17 @@ export default function Resumes() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold mb-2">Resumes</h1>
-        <p className="text-muted-foreground">
-          Store and manage different versions of your resume
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold mb-2">Resumes</h1>
+          <p className="text-muted-foreground">
+            Store and manage different versions of your resume
+          </p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)} data-testid="button-add-resume">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Resume
+        </Button>
       </div>
 
       <Card
@@ -116,12 +121,52 @@ export default function Resumes() {
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Your Resumes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockResumes.map((resume) => (
-            <ResumeCard key={resume.id} resume={resume} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-6">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : resumesWithLinkedApps.length === 0 ? (
+          <Card className="p-12">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <div className="p-4 rounded-full bg-muted">
+                <FileText className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1">No resumes yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Get started by adding your first resume
+                </p>
+              </div>
+              <Button onClick={() => setDialogOpen(true)} data-testid="button-add-first-resume">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Resume
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {resumesWithLinkedApps.map((resume) => (
+              <ResumeCard key={resume.id} resume={resume} />
+            ))}
+          </div>
+        )}
       </div>
+
+      <AddResumeDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }

@@ -3,13 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import type { Resume } from "@shared/schema";
 
-export interface Resume {
-  id: string;
-  title: string;
-  uploadDate: Date;
-  fileSize?: string;
-  tags?: string[];
+interface ResumeWithLinkedApplications extends Resume {
   linkedApplications?: {
     id: string;
     company: string;
@@ -18,9 +14,9 @@ export interface Resume {
 }
 
 interface ResumeCardProps {
-  resume: Resume;
-  onView?: (resume: Resume) => void;
-  onDownload?: (resume: Resume) => void;
+  resume: ResumeWithLinkedApplications;
+  onView?: (resume: ResumeWithLinkedApplications) => void;
+  onDownload?: (resume: ResumeWithLinkedApplications) => void;
   onDelete?: (id: string) => void;
 }
 
@@ -45,6 +41,8 @@ export function ResumeCard({
     if (onDelete) onDelete(resume.id);
   };
 
+  const uploadDate = resume.uploadDate instanceof Date ? resume.uploadDate : new Date(resume.uploadDate);
+
   return (
     <Card className="p-6" data-testid={`card-resume-${resume.id}`}>
       <div className="flex items-start gap-4">
@@ -57,7 +55,7 @@ export function ResumeCard({
           </h3>
           <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
             <span data-testid={`text-upload-date-${resume.id}`}>
-              {format(resume.uploadDate, "MMM d, yyyy")}
+              {format(uploadDate, "MMM d, yyyy")}
             </span>
             {resume.fileSize && (
               <>

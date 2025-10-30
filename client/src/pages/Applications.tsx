@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApplicationsTable, Application } from "@/components/ApplicationsTable";
 import { AddApplicationDialog } from "@/components/AddApplicationDialog";
+import { JobTypeOverview } from "@/components/JobTypeOverview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -85,6 +86,8 @@ export default function Applications() {
           Add Application
         </Button>
       </div>
+
+      <JobTypeOverview />
 
       <div className="flex flex-wrap gap-4">
         <div className="flex-1 min-w-[300px]">

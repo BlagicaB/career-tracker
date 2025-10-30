@@ -13,6 +13,9 @@ const mockCoverLetters: CoverLetter[] = [
     createdDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
     lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     tags: ["Technical", "Leadership", "Full Stack"],
+    linkedApplications: [
+      { id: "1", company: "Tech Corp", role: "Senior Software Engineer" },
+    ],
   },
   {
     id: "2",
@@ -22,6 +25,10 @@ const mockCoverLetters: CoverLetter[] = [
     createdDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
     lastModified: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
     tags: ["Frontend", "React", "UI/UX"],
+    linkedApplications: [
+      { id: "2", company: "StartupXYZ", role: "Full Stack Developer" },
+      { id: "3", company: "BigTech Inc", role: "Frontend Engineer" },
+    ],
   },
   {
     id: "3",

@@ -12,6 +12,11 @@ export interface CoverLetter {
   createdDate: Date;
   lastModified: Date;
   tags?: string[];
+  linkedApplications?: {
+    id: string;
+    company: string;
+    role: string;
+  }[];
 }
 
 interface CoverLetterCardProps {
@@ -90,6 +95,25 @@ export function CoverLetterCard({
                   {tag}
                 </Badge>
               ))}
+            </div>
+          )}
+          {coverLetter.linkedApplications && coverLetter.linkedApplications.length > 0 && (
+            <div className="mb-3 p-2 rounded-md bg-muted/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Used in {coverLetter.linkedApplications.length} application{coverLetter.linkedApplications.length > 1 ? 's' : ''}:
+              </p>
+              <div className="space-y-1">
+                {coverLetter.linkedApplications.slice(0, 2).map((app) => (
+                  <p key={app.id} className="text-xs text-muted-foreground" data-testid={`text-linked-app-${coverLetter.id}-${app.id}`}>
+                    • {app.role} at {app.company}
+                  </p>
+                ))}
+                {coverLetter.linkedApplications.length > 2 && (
+                  <p className="text-xs text-muted-foreground">
+                    +{coverLetter.linkedApplications.length - 2} more
+                  </p>
+                )}
+              </div>
             </div>
           )}
           <div className="flex gap-2 flex-wrap">

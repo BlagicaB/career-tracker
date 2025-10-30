@@ -10,6 +10,11 @@ export interface Resume {
   uploadDate: Date;
   fileSize?: string;
   tags?: string[];
+  linkedApplications?: {
+    id: string;
+    company: string;
+    role: string;
+  }[];
 }
 
 interface ResumeCardProps {
@@ -73,6 +78,25 @@ export function ResumeCard({
                   {tag}
                 </Badge>
               ))}
+            </div>
+          )}
+          {resume.linkedApplications && resume.linkedApplications.length > 0 && (
+            <div className="mb-3 p-2 rounded-md bg-muted/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Used in {resume.linkedApplications.length} application{resume.linkedApplications.length > 1 ? 's' : ''}:
+              </p>
+              <div className="space-y-1">
+                {resume.linkedApplications.slice(0, 2).map((app) => (
+                  <p key={app.id} className="text-xs text-muted-foreground" data-testid={`text-linked-app-${resume.id}-${app.id}`}>
+                    • {app.role} at {app.company}
+                  </p>
+                ))}
+                {resume.linkedApplications.length > 2 && (
+                  <p className="text-xs text-muted-foreground">
+                    +{resume.linkedApplications.length - 2} more
+                  </p>
+                )}
+              </div>
             </div>
           )}
           <div className="flex gap-2">

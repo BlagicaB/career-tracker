@@ -11,6 +11,10 @@ const mockResumes: Resume[] = [
     uploadDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     fileSize: "245 KB",
     tags: ["Technical", "Senior Level", "Full Stack"],
+    linkedApplications: [
+      { id: "1", company: "Tech Corp", role: "Senior Software Engineer" },
+      { id: "3", company: "BigTech Inc", role: "Frontend Engineer" },
+    ],
   },
   {
     id: "2",
@@ -18,6 +22,9 @@ const mockResumes: Resume[] = [
     uploadDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
     fileSize: "198 KB",
     tags: ["Frontend", "React", "UI/UX"],
+    linkedApplications: [
+      { id: "2", company: "StartupXYZ", role: "Full Stack Developer" },
+    ],
   },
   {
     id: "3",

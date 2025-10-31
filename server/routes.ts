@@ -9,6 +9,7 @@ import {
   insertSkillSchema,
   insertGoalSchema,
 } from "@shared/schema";
+import { extractBusinessCardInfo } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Applications
@@ -314,6 +315,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete goal" });
+    }
+  });
+
+  // Business card scanning endpoint
+  app.post("/api/scan/business-card", async (req, res) => {
+    try {
+      const { imageData } = req.body;
+      if (!imageData) {
+        return res.status(400).json({ error: "Image data is required" });
+      }
+
+      const contactInfo = await extractBusinessCardInfo(imageData);
+      res.json(contactInfo);
+    } catch (error: any) {
+      console.error("Business card extraction error:", error);
+      res.status(500).json({ 
+        error: "Failed to extract business card information",
+        details: error.message 
+      });
     }
   });
 

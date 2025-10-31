@@ -22,12 +22,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InsertContact, Contact } from "@shared/schema";
+import { CameraScanner } from "./CameraScanner";
+import { Scan, CreditCard, Keyboard } from "lucide-react";
 
 interface AddContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingContact?: Contact | null;
 }
+
+type InputMode = "manual" | "qr" | "businesscard";
 
 export function AddContactDialog({
   open,
@@ -36,6 +40,9 @@ export function AddContactDialog({
 }: AddContactDialogProps) {
   const { toast } = useToast();
   const isEditing = !!editingContact;
+  const [inputMode, setInputMode] = useState<InputMode>("manual");
+  const [isScanning, setIsScanning] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -122,6 +129,105 @@ export function AddContactDialog({
       status: "active",
       notes: "",
     });
+    setInputMode("manual");
+    setIsScanning(false);
+    setIsProcessing(false);
+  };
+
+  // Handle QR code scan result
+  const handleQRScan = async (qrData: string) => {
+    try {
+      setIsScanning(false);
+      // Try to parse as vCard or JSON
+      if (qrData.startsWith("BEGIN:VCARD")) {
+        // Parse vCard format
+        const name = qrData.match(/FN:(.+)/)?.[1] || "";
+        const email = qrData.match(/EMAIL[^:]*:(.+)/)?.[1] || "";
+        const phone = qrData.match(/TEL[^:]*:(.+)/)?.[1] || "";
+        const org = qrData.match(/ORG:(.+)/)?.[1] || "";
+        const title = qrData.match(/TITLE:(.+)/)?.[1] || "";
+        const url = qrData.match(/URL:(.+)/)?.[1] || "";
+        
+        setFormData(prev => ({
+          ...prev,
+          name: name || prev.name,
+          title: title || prev.title,
+          company: org || prev.company,
+          email: email || prev.email,
+          linkedinUrl: url.includes("linkedin") ? url : prev.linkedinUrl,
+        }));
+        
+        toast({
+          title: "QR Code Scanned",
+          description: "Contact information filled from QR code",
+        });
+      } else {
+        // Try parsing as JSON
+        try {
+          const data = JSON.parse(qrData);
+          setFormData(prev => ({
+            ...prev,
+            name: data.name || prev.name,
+            title: data.title || prev.title,
+            company: data.company || prev.company,
+            email: data.email || prev.email,
+            linkedinUrl: data.linkedin || data.linkedinUrl || prev.linkedinUrl,
+          }));
+          
+          toast({
+            title: "QR Code Scanned",
+            description: "Contact information filled from QR code",
+          });
+        } catch {
+          toast({
+            title: "Invalid QR Code",
+            description: "QR code does not contain valid contact data",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("QR scan error:", error);
+      toast({
+        title: "Scan Error",
+        description: "Failed to process QR code",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle business card scan result
+  const handleBusinessCardScan = async (imageData: string) => {
+    try {
+      setIsScanning(false);
+      setIsProcessing(true);
+      
+      const res = await apiRequest("POST", "/api/scan/business-card", { imageData });
+      const contactInfo = await res.json();
+      
+      setFormData(prev => ({
+        ...prev,
+        name: contactInfo.name || prev.name,
+        title: contactInfo.title || prev.title,
+        company: contactInfo.company || prev.company,
+        email: contactInfo.email || prev.email,
+        linkedinUrl: contactInfo.linkedin || prev.linkedinUrl,
+      }));
+      
+      toast({
+        title: "Business Card Scanned",
+        description: "Contact information extracted successfully",
+      });
+    } catch (error: any) {
+      console.error("Business card scan error:", error);
+      toast({
+        title: "Scan Error",
+        description: error.message || "Failed to extract business card information",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -148,16 +254,76 @@ export function AddContactDialog({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Contact" : "Add New Contact"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Update contact information" : "Add a new professional contact to your network"}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+    <>
+      {isScanning && (
+        <CameraScanner
+          mode={inputMode as "qr" | "businesscard"}
+          onScanComplete={inputMode === "qr" ? handleQRScan : handleBusinessCardScan}
+          onClose={() => setIsScanning(false)}
+        />
+      )}
+      
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? "Edit Contact" : "Add New Contact"}</DialogTitle>
+            <DialogDescription>
+              {isEditing ? "Update contact information" : "Add a new professional contact to your network"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {!isEditing && (
+            <div className="flex gap-2 pb-4 border-b">
+              <Button
+                type="button"
+                variant={inputMode === "manual" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setInputMode("manual")}
+                className="flex-1"
+                data-testid="button-input-manual"
+              >
+                <Keyboard className="h-4 w-4 mr-2" />
+                Manual Entry
+              </Button>
+              <Button
+                type="button"
+                variant={inputMode === "qr" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setInputMode("qr");
+                  setIsScanning(true);
+                }}
+                className="flex-1"
+                data-testid="button-input-qr"
+              >
+                <Scan className="h-4 w-4 mr-2" />
+                Scan QR Code
+              </Button>
+              <Button
+                type="button"
+                variant={inputMode === "businesscard" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setInputMode("businesscard");
+                  setIsScanning(true);
+                }}
+                className="flex-1"
+                data-testid="button-input-businesscard"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Scan Card
+              </Button>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit}>
+            {isProcessing && (
+              <div className="p-4 mb-4 bg-primary/10 text-sm rounded-lg text-center">
+                Extracting information from business card...
+              </div>
+            )}
+            
+            <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
@@ -293,5 +459,6 @@ export function AddContactDialog({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

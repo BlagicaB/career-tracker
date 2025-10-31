@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { z } from "zod";
 import { storage } from "./storage";
 import {
   insertApplicationSchema,
@@ -10,6 +11,10 @@ import {
   insertGoalSchema,
 } from "@shared/schema";
 import { extractBusinessCardInfo } from "./openai";
+
+const businessCardScanSchema = z.object({
+  imageData: z.string().min(1, "Image data is required"),
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Applications
@@ -321,12 +326,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Business card scanning endpoint
   app.post("/api/scan/business-card", async (req, res) => {
     try {
-      const { imageData } = req.body;
-      if (!imageData) {
-        return res.status(400).json({ error: "Image data is required" });
+      const result = businessCardScanSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: "Invalid request",
+          details: result.error.issues[0]?.message || "Image data is required"
+        });
       }
 
-      const contactInfo = await extractBusinessCardInfo(imageData);
+      const contactInfo = await extractBusinessCardInfo(result.data.imageData);
       res.json(contactInfo);
     } catch (error: any) {
       console.error("Business card extraction error:", error);

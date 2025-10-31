@@ -203,21 +203,36 @@ export function AddContactDialog({
       setIsProcessing(true);
       
       const res = await apiRequest("POST", "/api/scan/business-card", { imageData });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || errorData.details || "Failed to extract business card information");
+      }
+      
       const contactInfo = await res.json();
       
-      setFormData(prev => ({
-        ...prev,
-        name: contactInfo.name || prev.name,
-        title: contactInfo.title || prev.title,
-        company: contactInfo.company || prev.company,
-        email: contactInfo.email || prev.email,
-        linkedinUrl: contactInfo.linkedin || prev.linkedinUrl,
-      }));
-      
-      toast({
-        title: "Business Card Scanned",
-        description: "Contact information extracted successfully",
-      });
+      // Only update form if we got valid data
+      if (contactInfo && (contactInfo.name || contactInfo.email || contactInfo.company)) {
+        setFormData(prev => ({
+          ...prev,
+          name: contactInfo.name || prev.name,
+          title: contactInfo.title || prev.title,
+          company: contactInfo.company || prev.company,
+          email: contactInfo.email || prev.email,
+          linkedinUrl: contactInfo.linkedin || prev.linkedinUrl,
+        }));
+        
+        toast({
+          title: "Business Card Scanned",
+          description: "Contact information extracted successfully",
+        });
+      } else {
+        toast({
+          title: "No Information Found",
+          description: "Could not extract contact information from the image. Please try again or enter manually.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       console.error("Business card scan error:", error);
       toast({
@@ -280,6 +295,7 @@ export function AddContactDialog({
                 size="sm"
                 onClick={() => setInputMode("manual")}
                 className="flex-1"
+                disabled={isProcessing}
                 data-testid="button-input-manual"
               >
                 <Keyboard className="h-4 w-4 mr-2" />
@@ -294,6 +310,7 @@ export function AddContactDialog({
                   setIsScanning(true);
                 }}
                 className="flex-1"
+                disabled={isProcessing}
                 data-testid="button-input-qr"
               >
                 <Scan className="h-4 w-4 mr-2" />
@@ -308,6 +325,7 @@ export function AddContactDialog({
                   setIsScanning(true);
                 }}
                 className="flex-1"
+                disabled={isProcessing}
                 data-testid="button-input-businesscard"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
@@ -447,13 +465,13 @@ export function AddContactDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isPending}
+              disabled={isPending || isProcessing}
               data-testid="button-cancel"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending} data-testid="button-submit">
-              {isPending ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Contact" : "Add Contact")}
+            <Button type="submit" disabled={isPending || isProcessing} data-testid="button-submit">
+              {isPending ? (isEditing ? "Updating..." : "Adding...") : isProcessing ? "Processing..." : (isEditing ? "Update Contact" : "Add Contact")}
             </Button>
           </DialogFooter>
         </form>

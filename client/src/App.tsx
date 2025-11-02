@@ -11,6 +11,7 @@ import Skills from "@/pages/Skills";
 import Goals from "@/pages/Goals";
 import Resumes from "@/pages/Resumes";
 import CoverLetters from "@/pages/CoverLetters";
+import JobFolders from "@/pages/JobFolders";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/applications" component={Applications} />
+      <Route path="/job-folders" component={JobFolders} />
       <Route path="/networking" component={Networking} />
       <Route path="/skills" component={Skills} />
       <Route path="/goals" component={Goals} />

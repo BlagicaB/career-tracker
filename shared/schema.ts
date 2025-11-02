@@ -123,7 +123,7 @@ export const jobFolders = pgTable("job_folders", {
   
   // Interview Prep
   interviewNotes: text("interview_notes"),
-  questions: text("questions").array(),
+  questions: text("questions"),
   
   // Metadata
   status: text("status").notNull().default("researching"), // researching, ready, applied, interviewing, offered, rejected

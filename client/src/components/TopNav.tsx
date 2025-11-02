@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   FileEdit,
+  FolderKanban,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
@@ -13,6 +14,7 @@ import { ThemeToggle } from "./ThemeToggle";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Applications", url: "/applications", icon: Briefcase },
+  { title: "Job Folders", url: "/job-folders", icon: FolderKanban },
   { title: "Networking", url: "/networking", icon: Users },
   { title: "Skills", url: "/skills", icon: Award },
   { title: "Goals", url: "/goals", icon: Target },

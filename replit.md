@@ -19,6 +19,8 @@ The platform follows a utility-focused design approach with minimal decoration, 
 - Form reset logic prevents stale data when reopening dialog
 - Concurrent upload prevention ensures one file processes at a time
 - End-to-end tests validated manual resume creation workflow
+- PDF.js worker served locally from public directory for reliable loading (no CDN dependency)
+- Worker file (pdf.worker.min.mjs) version-matched to installed pdfjs-dist package
 
 **AI-Powered Job Folders Feature Added**
 - Implemented comprehensive Job Folders feature for organizing job application materials

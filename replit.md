@@ -6,9 +6,24 @@ A comprehensive career management platform designed to help job seekers track ap
 
 The platform follows a utility-focused design approach with minimal decoration, consistent data presentation, and quick navigation between different tracking modules. It serves as a centralized hub for managing all aspects of a job search and career development process.
 
-## Recent Changes (October 31, 2025)
+## Recent Changes (November 2, 2025)
 
-**Camera Scanning Features Added**
+**AI-Powered Job Folders Feature Added**
+- Implemented comprehensive Job Folders feature for organizing job application materials
+- Created JobFolder data model with job details, AI research fields, hiring manager info, interview notes
+- Built AI-powered company research using OpenAI GPT-4o (conducts research based on general knowledge)
+- Added resume analysis feature comparing resume content against job requirements
+- Created JobFolders page with grid view of all job application packages
+- Built AddJobFolderDialog for creating new folders with job details
+- Implemented JobFolderDetail component with tabbed interface (Research, Hiring Manager, Resume Analysis, Interview Notes)
+- Added EditHiringManagerDialog for managing hiring manager contact information
+- Company research generates: summary, history, current state, challenges, culture analysis
+- Resume analysis provides: match score, strengths, gaps, recommendations
+- All API endpoints include proper Zod validation and error handling
+- End-to-end tests passed successfully validating all core workflows
+- Note: Production enhancement would integrate real-time web search API for company research
+
+**Camera Scanning Features (October 31, 2025)**
 - Implemented QR code scanning for quick contact entry using qr-scanner library
 - Integrated OpenAI vision API (gpt-4o) for business card OCR via Replit AI Integrations
 - Created CameraScanner component supporting both QR and business card modes
@@ -32,6 +47,7 @@ The platform follows a utility-focused design approach with minimal decoration, 
 - Dashboard now displays real-time statistics from backend data
 
 **Features Fully Functional**
+- ✅ Job Folders - AI-powered job application packages with company research and resume analysis
 - ✅ Job Applications tracking with status, priority, salary info
 - ✅ Resume management with tagging and application linking
 - ✅ Cover Letter management with company/role association
@@ -130,6 +146,16 @@ Preferred communication style: Simple, everyday language.
    - Tag-based organization
    - Content storage for full text
 
+5. **jobFolders** - AI-powered job application packages
+   - Job details: company, role, location, description, salary range, URL
+   - Foreign keys to resumes and cover letters
+   - AI-generated company research fields (summary, history, current state, challenges, culture)
+   - Resume analysis (JSON-stringified match score, strengths, gaps, recommendations)
+   - Hiring manager info (name, title, LinkedIn, background)
+   - Interview notes and questions
+   - Application status workflow (researching, applied, interviewing, offer, rejected)
+   - Created timestamp
+
 **Schema Patterns**
 - UUID primary keys for all tables
 - Timestamp fields for audit trails
@@ -156,6 +182,7 @@ Preferred communication style: Simple, everyday language.
 - `/` - Dashboard with metrics overview
 - `/job-search` - Job search and discovery
 - `/applications` - Application tracking table
+- `/job-folders` - AI-powered job application packages with research and analysis
 - `/networking` - Contact management
 - `/skills` - Skills inventory and tracking
 - `/goals` - Goal setting and progress
@@ -208,6 +235,10 @@ Preferred communication style: Simple, everyday language.
 - **PostCSS** - CSS processing with Autoprefixer
 - **ESBuild** - Production bundle building for server
 
+### AI & Integration Services
+- **OpenAI API** (via Replit AI Integrations) - GPT-4o for resume analysis, company research, business card OCR
+- **qr-scanner** - QR code scanning for contact entry
+
 ### Additional Libraries
 - **cmdk** - Command menu interface component
 - **embla-carousel-react** - Carousel/slider functionality
@@ -217,3 +248,30 @@ Preferred communication style: Simple, everyday language.
 ### Google Fonts
 - **Inter** - Primary UI font family
 - **JetBrains Mono** - Monospace font for numerical data
+
+## AI Features
+
+### Job Folders AI Assistant
+
+**Resume Analysis** (`analyzeResumeForJob`)
+- Compares resume content against job description using OpenAI GPT-4o
+- Generates match score (0-100) indicating candidate fit
+- Identifies strengths that align with job requirements
+- Highlights skill gaps and areas for improvement
+- Provides actionable recommendations for application success
+- Results saved to job folder for reference
+
+**Company Research** (`conductCompanyResearch`)
+- Uses AI synthesis to generate comprehensive company insights
+- Analyzes company history and founding story
+- Describes current business focus and market position
+- Identifies challenges and opportunities in the industry
+- Synthesizes company culture and values information
+- Currently uses GPT-4o general knowledge (production would integrate web search API)
+- All research fields saved to job folder
+
+### Business Card OCR
+- Uses OpenAI GPT-4o vision model for text extraction from business card images
+- Extracts: name, title, company, email, phone, LinkedIn, address
+- Auto-populates contact form fields after successful scan
+- Includes validation and error handling for failed extractions

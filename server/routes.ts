@@ -452,21 +452,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Job folder not found" });
       }
 
-      // For now, return a placeholder message since web search is not available in this context
-      // In a real implementation, this would call a web search API
-      const placeholderResults = `Company: ${jobFolder.company}
+      // NOTE: This endpoint currently uses AI synthesis with general knowledge.
+      // For production use, integrate a web search API (e.g., Google Custom Search, Bing Search API)
+      // to fetch real-time company data before passing to conductCompanyResearch().
+      //
+      // Example implementation with web search:
+      // const searchQuery = `${jobFolder.company} company overview news recent developments`;
+      // const searchResults = await webSearchAPI.search(searchQuery);
+      // const research = await conductCompanyResearch(jobFolder.company, searchResults);
       
-Recent news and information about ${jobFolder.company} would appear here from web search results.
-This would include:
-- Company overview and history
-- Recent news articles and press releases
-- Information about company culture and values
-- Current business focus and market position
-- Recent challenges and opportunities
-      
-To enable this feature, integrate with a web search API or service.`;
-
-      const research = await conductCompanyResearch(jobFolder.company, placeholderResults);
+      // For demo purposes, AI will generate research based on training data
+      const demoContext = `Generate comprehensive research for ${jobFolder.company} including company history, current state, challenges, and culture based on publicly available information.`;
+      const research = await conductCompanyResearch(jobFolder.company, demoContext);
       
       // Save the research to the job folder
       await storage.updateJobFolder(req.params.id, {

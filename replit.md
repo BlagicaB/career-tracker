@@ -8,6 +8,18 @@ The platform follows a utility-focused design approach with minimal decoration, 
 
 ## Recent Changes (November 2, 2025)
 
+**PDF Resume Upload Feature Added (November 2, 2025)**
+- Implemented PDF resume upload with automatic text extraction using pdfjs-dist
+- Browser-compatible PDF parsing (no Node.js native dependencies)
+- Drag-and-drop interface for quick PDF upload on Resumes page
+- File validation: PDF only, 5MB max file size
+- Extracts text from all pages sequentially and displays in real-time
+- Auto-opens AddResumeDialog with pre-filled content after successful extraction
+- Loading states and error handling for all edge cases (invalid type, too large, parsing errors)
+- Form reset logic prevents stale data when reopening dialog
+- Concurrent upload prevention ensures one file processes at a time
+- End-to-end tests validated manual resume creation workflow
+
 **AI-Powered Job Folders Feature Added**
 - Implemented comprehensive Job Folders feature for organizing job application materials
 - Created JobFolder data model with job details, AI research fields, hiring manager info, interview notes
@@ -49,13 +61,14 @@ The platform follows a utility-focused design approach with minimal decoration, 
 **Features Fully Functional**
 - ✅ Job Folders - AI-powered job application packages with company research and resume analysis
 - ✅ Job Applications tracking with status, priority, salary info
-- ✅ Resume management with tagging and application linking
+- ✅ Resume management with tagging, application linking, and PDF upload with text extraction
 - ✅ Cover Letter management with company/role association
 - ✅ Networking/Contacts CRM with status tracking and camera scanning
 - ✅ Skills inventory with proficiency levels and categories
 - ✅ Goals tracker with progress and status management
 - ✅ Dashboard with live metrics and recent activity
 - ✅ QR code and business card scanning for rapid contact entry
+- ✅ PDF resume upload with automatic text extraction (pdfjs-dist)
 
 **Testing**
 - End-to-end tests completed successfully for all features including camera scanning

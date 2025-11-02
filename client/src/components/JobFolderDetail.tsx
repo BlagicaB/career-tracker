@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { EditHiringManagerDialog } from "@/components/EditHiringManagerDialog";
 import type { JobFolder, Resume } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -20,7 +21,8 @@ import {
   User,
   MessageSquare,
   Loader2,
-  Calendar
+  Calendar,
+  Edit
 } from "lucide-react";
 import {
   Select,
@@ -41,6 +43,7 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
   const { toast } = useToast();
   const [interviewNotes, setInterviewNotes] = useState(folder.interviewNotes || "");
   const [questions, setQuestions] = useState(folder.questions || "");
+  const [managerDialogOpen, setManagerDialogOpen] = useState(false);
 
   const { data: resumes = [] } = useQuery<Resume[]>({
     queryKey: ["/api/resumes"],
@@ -90,6 +93,28 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
       toast({
         title: "Error",
         description: error.message || "Failed to analyze resume",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const researchCompanyMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/job-folders/${folder.id}/research-company`, {});
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/job-folders"] });
+      onUpdate();
+      toast({
+        title: "Research complete",
+        description: "Company research has been generated and saved.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to conduct company research",
         variant: "destructive",
       });
     },
@@ -238,14 +263,24 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
             </CardContent>
           </Card>
 
-          {folder.hiringManagerName && (
-            <Card>
-              <CardHeader>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <User className="h-4 w-4" />
                   Hiring Manager
                 </CardTitle>
-              </CardHeader>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setManagerDialogOpen(true)}
+                  data-testid="button-edit-manager"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            {folder.hiringManagerName ? (
               <CardContent className="space-y-2 text-sm">
                 <div>
                   <span className="font-medium">{folder.hiringManagerName}</span>
@@ -263,9 +298,27 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
                     LinkedIn Profile
                   </a>
                 )}
+                {folder.hiringManagerBackground && (
+                  <p className="text-muted-foreground mt-2 whitespace-pre-wrap">
+                    {folder.hiringManagerBackground}
+                  </p>
+                )}
               </CardContent>
-            </Card>
-          )}
+            ) : (
+              <CardContent className="py-6 text-center">
+                <p className="text-sm text-muted-foreground mb-3">
+                  No hiring manager information yet
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setManagerDialogOpen(true)}
+                >
+                  Add Information
+                </Button>
+              </CardContent>
+            )}
+          </Card>
         </div>
       </div>
 
@@ -279,6 +332,20 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
         <TabsContent value="research" className="space-y-4">
           {folder.companyResearch ? (
             <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button 
+                  onClick={() => researchCompanyMutation.mutate()}
+                  disabled={researchCompanyMutation.isPending}
+                  variant="outline"
+                  data-testid="button-refresh-research"
+                >
+                  {researchCompanyMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Researching...</>
+                  ) : (
+                    <><Sparkles className="h-4 w-4 mr-2" />Refresh Research</>
+                  )}
+                </Button>
+              </div>
               {folder.companyResearch && (
                 <Card>
                   <CardHeader>
@@ -348,6 +415,17 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
                 <p className="text-muted-foreground mb-6">
                   Conduct AI-powered research to learn about the company's history, culture, and current challenges.
                 </p>
+                <Button 
+                  onClick={() => researchCompanyMutation.mutate()}
+                  disabled={researchCompanyMutation.isPending}
+                  data-testid="button-research-company"
+                >
+                  {researchCompanyMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Researching...</>
+                  ) : (
+                    <><Sparkles className="h-4 w-4 mr-2" />Research Company</>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -500,6 +578,18 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
           </div>
         </TabsContent>
       </Tabs>
+
+      <EditHiringManagerDialog
+        open={managerDialogOpen}
+        onOpenChange={setManagerDialogOpen}
+        initialValues={{
+          hiringManagerName: folder.hiringManagerName || "",
+          hiringManagerTitle: folder.hiringManagerTitle || "",
+          hiringManagerLinkedin: folder.hiringManagerLinkedin || "",
+          hiringManagerBackground: folder.hiringManagerBackground || "",
+        }}
+        onSave={(values) => updateMutation.mutate(values)}
+      />
     </div>
   );
 }

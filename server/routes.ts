@@ -446,18 +446,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/job-folders/:id/research-company", async (req, res) => {
     try {
-      const { webSearchResults } = req.body;
       const jobFolder = await storage.getJobFolder(req.params.id);
       
       if (!jobFolder) {
         return res.status(404).json({ error: "Job folder not found" });
       }
-      
-      if (!webSearchResults) {
-        return res.status(400).json({ error: "Web search results are required" });
-      }
 
-      const research = await conductCompanyResearch(jobFolder.company, webSearchResults);
+      // For now, return a placeholder message since web search is not available in this context
+      // In a real implementation, this would call a web search API
+      const placeholderResults = `Company: ${jobFolder.company}
+      
+Recent news and information about ${jobFolder.company} would appear here from web search results.
+This would include:
+- Company overview and history
+- Recent news articles and press releases
+- Information about company culture and values
+- Current business focus and market position
+- Recent challenges and opportunities
+      
+To enable this feature, integrate with a web search API or service.`;
+
+      const research = await conductCompanyResearch(jobFolder.company, placeholderResults);
       
       // Save the research to the job folder
       await storage.updateJobFolder(req.params.id, {

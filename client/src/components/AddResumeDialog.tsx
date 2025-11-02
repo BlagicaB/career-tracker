@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,18 +18,20 @@ import type { InsertResume } from "@shared/schema";
 interface AddResumeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialContent?: string;
 }
 
 export function AddResumeDialog({
   open,
   onOpenChange,
+  initialContent = "",
 }: AddResumeDialogProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: "",
     tags: "",
     fileSize: "",
-    content: "",
+    content: initialContent,
   });
 
   const createMutation = useMutation({
@@ -63,6 +65,19 @@ export function AddResumeDialog({
       content: "",
     });
   };
+
+  // Update content when initialContent changes (PDF upload) and reset when dialog closes
+  useEffect(() => {
+    if (initialContent && open) {
+      setFormData(prev => ({
+        ...prev,
+        content: initialContent,
+      }));
+    } else if (!open) {
+      // Reset form when dialog closes
+      resetForm();
+    }
+  }, [initialContent, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

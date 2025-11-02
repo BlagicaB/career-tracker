@@ -9,9 +9,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { Resume, Application } from "@shared/schema";
 import * as pdfjsLib from "pdfjs-dist";
+// Import worker file using Vite's asset URL import
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-// Set up PDF.js worker using local file served from public directory
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Set up PDF.js worker using imported URL
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default function Resumes() {
   const [dragActive, setDragActive] = useState(false);

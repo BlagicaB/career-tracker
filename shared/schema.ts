@@ -92,6 +92,46 @@ export const jobSearches = pgTable("job_searches", {
   savedDate: timestamp("saved_date").notNull().defaultNow(),
 });
 
+export const jobFolders = pgTable("job_folders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Job Posting Details
+  jobTitle: text("job_title").notNull(),
+  company: text("company").notNull(),
+  location: text("location"),
+  salary: text("salary"),
+  jobDescription: text("job_description"),
+  jobRequirements: text("job_requirements"),
+  jobUrl: text("job_url"),
+  
+  // Company Research
+  companyResearch: text("company_research"), // AI-generated research summary
+  companyHistory: text("company_history"),
+  companyCurrent: text("company_current"),
+  companyChallenges: text("company_challenges"),
+  companyCulture: text("company_culture"),
+  
+  // Hiring Manager Info
+  hiringManagerName: text("hiring_manager_name"),
+  hiringManagerTitle: text("hiring_manager_title"),
+  hiringManagerLinkedin: text("hiring_manager_linkedin"),
+  hiringManagerBackground: text("hiring_manager_background"),
+  
+  // Resume & Application Materials
+  resumeId: varchar("resume_id"),
+  coverLetterId: varchar("cover_letter_id"),
+  resumeAnalysis: text("resume_analysis"), // AI suggestions for resume improvements
+  
+  // Interview Prep
+  interviewNotes: text("interview_notes"),
+  questions: text("questions").array(),
+  
+  // Metadata
+  status: text("status").notNull().default("researching"), // researching, ready, applied, interviewing, offered, rejected
+  createdDate: timestamp("created_date").notNull().defaultNow(),
+  lastModified: timestamp("last_modified").notNull().defaultNow(),
+  applicationId: varchar("application_id"), // Link to existing application if created
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -131,6 +171,12 @@ export const insertJobSearchSchema = createInsertSchema(jobSearches).omit({
   savedDate: true,
 });
 
+export const insertJobFolderSchema = createInsertSchema(jobFolders).omit({
+  id: true,
+  createdDate: true,
+  lastModified: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
@@ -147,3 +193,5 @@ export type InsertGoal = z.infer<typeof insertGoalSchema>;
 export type Goal = typeof goals.$inferSelect;
 export type InsertJobSearch = z.infer<typeof insertJobSearchSchema>;
 export type JobSearch = typeof jobSearches.$inferSelect;
+export type InsertJobFolder = z.infer<typeof insertJobFolderSchema>;
+export type JobFolder = typeof jobFolders.$inferSelect;

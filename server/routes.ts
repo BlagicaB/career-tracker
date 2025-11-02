@@ -9,8 +9,9 @@ import {
   insertContactSchema,
   insertSkillSchema,
   insertGoalSchema,
+  insertJobFolderSchema,
 } from "@shared/schema";
-import { extractBusinessCardInfo } from "./openai";
+import { extractBusinessCardInfo, analyzeResumeForJob, conductCompanyResearch } from "./openai";
 
 const businessCardScanSchema = z.object({
   imageData: z.string().min(1, "Image data is required"),
@@ -340,6 +341,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Business card extraction error:", error);
       res.status(500).json({ 
         error: "Failed to extract business card information",
+        details: error.message 
+      });
+    }
+  });
+
+  // Job Folders
+  app.get("/api/job-folders", async (req, res) => {
+    try {
+      const jobFolders = await storage.getJobFolders();
+      res.json(jobFolders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch job folders" });
+    }
+  });
+
+  app.get("/api/job-folders/:id", async (req, res) => {
+    try {
+      const jobFolder = await storage.getJobFolder(req.params.id);
+      if (!jobFolder) {
+        return res.status(404).json({ error: "Job folder not found" });
+      }
+      res.json(jobFolder);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch job folder" });
+    }
+  });
+
+  app.post("/api/job-folders", async (req, res) => {
+    try {
+      const result = insertJobFolderSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+      const jobFolder = await storage.createJobFolder(result.data);
+      res.json(jobFolder);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create job folder" });
+    }
+  });
+
+  app.patch("/api/job-folders/:id", async (req, res) => {
+    try {
+      const result = insertJobFolderSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+      const jobFolder = await storage.updateJobFolder(req.params.id, result.data);
+      if (!jobFolder) {
+        return res.status(404).json({ error: "Job folder not found" });
+      }
+      res.json(jobFolder);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update job folder" });
+    }
+  });
+
+  app.delete("/api/job-folders/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteJobFolder(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Job folder not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete job folder" });
+    }
+  });
+
+  // AI-powered job folder endpoints
+  app.post("/api/job-folders/:id/analyze-resume", async (req, res) => {
+    try {
+      const { resumeContent } = req.body;
+      const jobFolder = await storage.getJobFolder(req.params.id);
+      
+      if (!jobFolder) {
+        return res.status(404).json({ error: "Job folder not found" });
+      }
+      
+      if (!resumeContent) {
+        return res.status(400).json({ error: "Resume content is required" });
+      }
+      
+      if (!jobFolder.jobDescription) {
+        return res.status(400).json({ error: "Job description is required for analysis" });
+      }
+
+      const analysis = await analyzeResumeForJob(resumeContent, jobFolder.jobDescription);
+      
+      // Save the analysis to the job folder
+      await storage.updateJobFolder(req.params.id, {
+        resumeAnalysis: JSON.stringify(analysis)
+      });
+      
+      res.json(analysis);
+    } catch (error: any) {
+      console.error("Resume analysis error:", error);
+      res.status(500).json({ 
+        error: "Failed to analyze resume",
+        details: error.message 
+      });
+    }
+  });
+
+  app.post("/api/job-folders/:id/research-company", async (req, res) => {
+    try {
+      const { webSearchResults } = req.body;
+      const jobFolder = await storage.getJobFolder(req.params.id);
+      
+      if (!jobFolder) {
+        return res.status(404).json({ error: "Job folder not found" });
+      }
+      
+      if (!webSearchResults) {
+        return res.status(400).json({ error: "Web search results are required" });
+      }
+
+      const research = await conductCompanyResearch(jobFolder.company, webSearchResults);
+      
+      // Save the research to the job folder
+      await storage.updateJobFolder(req.params.id, {
+        companyResearch: research.summary,
+        companyHistory: research.history,
+        companyCurrent: research.currentState,
+        companyChallenges: research.challenges,
+        companyCulture: research.culture,
+      });
+      
+      res.json(research);
+    } catch (error: any) {
+      console.error("Company research error:", error);
+      res.status(500).json({ 
+        error: "Failed to conduct company research",
         details: error.message 
       });
     }

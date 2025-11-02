@@ -13,6 +13,8 @@ import {
   type InsertSkill,
   type Goal,
   type InsertGoal,
+  type JobFolder,
+  type InsertJobFolder,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -63,6 +65,13 @@ export interface IStorage {
   createGoal(goal: InsertGoal): Promise<Goal>;
   updateGoal(id: string, goal: Partial<InsertGoal>): Promise<Goal | undefined>;
   deleteGoal(id: string): Promise<boolean>;
+  
+  // Job Folders
+  getJobFolders(): Promise<JobFolder[]>;
+  getJobFolder(id: string): Promise<JobFolder | undefined>;
+  createJobFolder(jobFolder: InsertJobFolder): Promise<JobFolder>;
+  updateJobFolder(id: string, jobFolder: Partial<InsertJobFolder>): Promise<JobFolder | undefined>;
+  deleteJobFolder(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -73,6 +82,7 @@ export class MemStorage implements IStorage {
   private contacts: Map<string, Contact>;
   private skills: Map<string, Skill>;
   private goals: Map<string, Goal>;
+  private jobFolders: Map<string, JobFolder>;
 
   constructor() {
     this.users = new Map();
@@ -82,6 +92,7 @@ export class MemStorage implements IStorage {
     this.contacts = new Map();
     this.skills = new Map();
     this.goals = new Map();
+    this.jobFolders = new Map();
   }
 
   // Users
@@ -326,6 +337,66 @@ export class MemStorage implements IStorage {
 
   async deleteGoal(id: string): Promise<boolean> {
     return this.goals.delete(id);
+  }
+
+  // Job Folders
+  async getJobFolders(): Promise<JobFolder[]> {
+    return Array.from(this.jobFolders.values());
+  }
+
+  async getJobFolder(id: string): Promise<JobFolder | undefined> {
+    return this.jobFolders.get(id);
+  }
+
+  async createJobFolder(insertJobFolder: InsertJobFolder): Promise<JobFolder> {
+    const id = randomUUID();
+    const now = new Date();
+    const jobFolder: JobFolder = {
+      id,
+      jobTitle: insertJobFolder.jobTitle,
+      company: insertJobFolder.company,
+      location: insertJobFolder.location ?? null,
+      salary: insertJobFolder.salary ?? null,
+      jobDescription: insertJobFolder.jobDescription ?? null,
+      jobRequirements: insertJobFolder.jobRequirements ?? null,
+      jobUrl: insertJobFolder.jobUrl ?? null,
+      companyResearch: insertJobFolder.companyResearch ?? null,
+      companyHistory: insertJobFolder.companyHistory ?? null,
+      companyCurrent: insertJobFolder.companyCurrent ?? null,
+      companyChallenges: insertJobFolder.companyChallenges ?? null,
+      companyCulture: insertJobFolder.companyCulture ?? null,
+      hiringManagerName: insertJobFolder.hiringManagerName ?? null,
+      hiringManagerTitle: insertJobFolder.hiringManagerTitle ?? null,
+      hiringManagerLinkedin: insertJobFolder.hiringManagerLinkedin ?? null,
+      hiringManagerBackground: insertJobFolder.hiringManagerBackground ?? null,
+      resumeId: insertJobFolder.resumeId ?? null,
+      coverLetterId: insertJobFolder.coverLetterId ?? null,
+      resumeAnalysis: insertJobFolder.resumeAnalysis ?? null,
+      interviewNotes: insertJobFolder.interviewNotes ?? null,
+      questions: insertJobFolder.questions ?? null,
+      status: insertJobFolder.status ?? "researching",
+      createdDate: now,
+      lastModified: now,
+      applicationId: insertJobFolder.applicationId ?? null,
+    };
+    this.jobFolders.set(id, jobFolder);
+    return jobFolder;
+  }
+
+  async updateJobFolder(id: string, updates: Partial<InsertJobFolder>): Promise<JobFolder | undefined> {
+    const existing = this.jobFolders.get(id);
+    if (!existing) return undefined;
+    const updated = { 
+      ...existing, 
+      ...updates,
+      lastModified: new Date(),
+    };
+    this.jobFolders.set(id, updated);
+    return updated;
+  }
+
+  async deleteJobFolder(id: string): Promise<boolean> {
+    return this.jobFolders.delete(id);
   }
 }
 

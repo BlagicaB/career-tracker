@@ -231,21 +231,31 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Select 
-                value={folder.resumeId || ""} 
-                onValueChange={handleResumeSelect}
-              >
-                <SelectTrigger data-testid="select-resume">
-                  <SelectValue placeholder="Select a resume" />
-                </SelectTrigger>
-                <SelectContent>
-                  {resumes.map(resume => (
-                    <SelectItem key={resume.id} value={resume.id}>
-                      {resume.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {resumes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No resumes available. Create a resume first in the Resumes page.
+                </p>
+              ) : (
+                <Select 
+                  value={folder.resumeId || ""} 
+                  onValueChange={handleResumeSelect}
+                >
+                  <SelectTrigger data-testid="select-resume">
+                    <SelectValue placeholder="Select a resume" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {resumes.map(resume => (
+                      <SelectItem 
+                        key={resume.id} 
+                        value={resume.id}
+                        data-testid={`resume-option-${resume.id}`}
+                      >
+                        {resume.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {folder.resumeId && folder.jobDescription && !resumeAnalysis && (
                 <Button 
                   className="w-full mt-3" 

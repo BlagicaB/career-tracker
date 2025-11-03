@@ -3,14 +3,36 @@ import { AddCoverLetterDialog } from "@/components/AddCoverLetterDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Plus, Search } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { CoverLetter, Application } from "@shared/schema";
 
 export default function CoverLetters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCoverLetter, setEditingCoverLetter] = useState<CoverLetter | undefined>();
+  const [viewingCoverLetter, setViewingCoverLetter] = useState<CoverLetterWithApplications | undefined>();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: coverLetters, isLoading: coverLettersLoading } = useQuery<CoverLetter[]>({
     queryKey: ["/api/cover-letters"],
@@ -52,6 +74,72 @@ export default function CoverLetters() {
       );
     });
   }, [coverLettersWithApplications, searchQuery]);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/cover-letters/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Cover letter deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/cover-letters"] });
+      setDeleteId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete cover letter",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleView = (coverLetter: CoverLetterWithApplications) => {
+    setViewingCoverLetter(coverLetter);
+  };
+
+  const handleEdit = (coverLetter: CoverLetterWithApplications) => {
+    setEditingCoverLetter(coverLetter);
+  };
+
+  const handleCopy = (coverLetter: CoverLetterWithApplications) => {
+    if (coverLetter.content) {
+      navigator.clipboard.writeText(coverLetter.content);
+      toast({
+        title: "Copied",
+        description: "Cover letter content copied to clipboard",
+      });
+    }
+  };
+
+  const handleDownload = (coverLetter: CoverLetterWithApplications) => {
+    const content = coverLetter.content || "";
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${coverLetter.title}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({
+      title: "Downloaded",
+      description: "Cover letter exported successfully",
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    setDeleteId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -112,12 +200,88 @@ export default function CoverLetters() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCoverLetters.map((coverLetter) => (
-            <CoverLetterCard key={coverLetter.id} coverLetter={coverLetter} />
+            <CoverLetterCard 
+              key={coverLetter.id} 
+              coverLetter={coverLetter}
+              onView={handleView}
+              onEdit={handleEdit}
+              onCopy={handleCopy}
+              onDownload={handleDownload}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}
 
-      <AddCoverLetterDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      <AddCoverLetterDialog 
+        open={isDialogOpen || !!editingCoverLetter} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDialogOpen(false);
+            setEditingCoverLetter(undefined);
+          }
+        }}
+        coverLetter={editingCoverLetter}
+      />
+
+      <Dialog open={!!viewingCoverLetter} onOpenChange={(open) => !open && setViewingCoverLetter(undefined)}>
+        <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewingCoverLetter?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {viewingCoverLetter?.company && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Company</p>
+                <p>{viewingCoverLetter.company}</p>
+              </div>
+            )}
+            {viewingCoverLetter?.role && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Role</p>
+                <p>{viewingCoverLetter.role}</p>
+              </div>
+            )}
+            {viewingCoverLetter?.tags && viewingCoverLetter.tags.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {viewingCoverLetter.tags.map((tag, index) => (
+                    <span key={index} className="px-2 py-1 text-xs rounded-md bg-muted">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {viewingCoverLetter?.content && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Content</p>
+                <div className="whitespace-pre-wrap p-4 rounded-md bg-muted">
+                  {viewingCoverLetter.content}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Cover Letter</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this cover letter? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

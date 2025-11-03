@@ -7,9 +7,13 @@ import {
   LayoutDashboard,
   FileEdit,
   FolderKanban,
+  LogOut,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuth, getLogoutUrl } from "@/lib/auth";
+import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -24,6 +28,13 @@ const menuItems = [
 
 export function TopNav() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  const getInitials = (firstName?: string | null, lastName?: string | null) => {
+    const first = firstName?.charAt(0) || "";
+    const last = lastName?.charAt(0) || "";
+    return (first + last).toUpperCase() || "U";
+  };
 
   return (
     <nav className="border-b bg-background sticky top-0 z-50">
@@ -51,7 +62,27 @@ export function TopNav() {
             })}
           </div>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          {user && (
+            <>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.profileImageUrl || undefined} />
+                  <AvatarFallback>{getInitials(user.firstName, user.lastName)}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium" data-testid="text-username">
+                  {user.firstName} {user.lastName}
+                </span>
+              </div>
+              <a href={getLogoutUrl()}>
+                <Button variant="ghost" size="icon" data-testid="button-logout">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </a>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );

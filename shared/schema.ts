@@ -1,16 +1,35 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Replit Auth - Session storage table
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Replit Auth - User storage table
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const applications = pgTable("applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   company: text("company").notNull(),
   role: text("role").notNull(),
   location: text("location"),
@@ -30,6 +49,7 @@ export const applications = pgTable("applications", {
 
 export const resumes = pgTable("resumes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   uploadDate: timestamp("upload_date").notNull().defaultNow(),
   fileSize: text("file_size"),
@@ -39,6 +59,7 @@ export const resumes = pgTable("resumes", {
 
 export const coverLetters = pgTable("cover_letters", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   company: text("company"),
   role: text("role"),
@@ -50,6 +71,7 @@ export const coverLetters = pgTable("cover_letters", {
 
 export const contacts = pgTable("contacts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   title: text("title").notNull(),
   company: text("company").notNull(),
@@ -63,6 +85,7 @@ export const contacts = pgTable("contacts", {
 
 export const skills = pgTable("skills", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   category: text("category").notNull(),
   proficiency: integer("proficiency").notNull().default(0),
@@ -70,6 +93,7 @@ export const skills = pgTable("skills", {
 
 export const goals = pgTable("goals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description"),
   category: text("category").notNull(),
@@ -80,6 +104,7 @@ export const goals = pgTable("goals", {
 
 export const jobSearches = pgTable("job_searches", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   company: text("company").notNull(),
   location: text("location"),
@@ -94,6 +119,7 @@ export const jobSearches = pgTable("job_searches", {
 
 export const jobFolders = pgTable("job_folders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   // Job Posting Details
   jobTitle: text("job_title").notNull(),
   company: text("company").notNull(),
@@ -132,52 +158,57 @@ export const jobFolders = pgTable("job_folders", {
   applicationId: varchar("application_id"), // Link to existing application if created
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
+// Replit Auth - User insert type
+export type UpsertUser = typeof users.$inferInsert;
 
 export const insertApplicationSchema = createInsertSchema(applications).omit({
   id: true,
+  userId: true,
   appliedDate: true,
 });
 
 export const insertResumeSchema = createInsertSchema(resumes).omit({
   id: true,
+  userId: true,
   uploadDate: true,
 });
 
 export const insertCoverLetterSchema = createInsertSchema(coverLetters).omit({
   id: true,
+  userId: true,
   createdDate: true,
   lastModified: true,
 });
 
 export const insertContactSchema = createInsertSchema(contacts).omit({
   id: true,
+  userId: true,
   createdDate: true,
 });
 
 export const insertSkillSchema = createInsertSchema(skills).omit({
   id: true,
+  userId: true,
 });
 
 export const insertGoalSchema = createInsertSchema(goals).omit({
   id: true,
+  userId: true,
 });
 
 export const insertJobSearchSchema = createInsertSchema(jobSearches).omit({
   id: true,
+  userId: true,
   savedDate: true,
 });
 
 export const insertJobFolderSchema = createInsertSchema(jobFolders).omit({
   id: true,
+  userId: true,
   createdDate: true,
   lastModified: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type Application = typeof applications.$inferSelect;

@@ -264,3 +264,75 @@ Focus on information that would help a job applicant understand the company and 
     }
   );
 }
+
+/**
+ * Generates a personalized cover letter based on resume content and job details
+ * @param resumeContent - The full text content of the resume
+ * @param jobTitle - The job title/position
+ * @param companyName - The company name
+ * @param jobDescription - The job posting description (optional but recommended)
+ * @returns Generated cover letter text
+ */
+export async function generateCoverLetter(
+  resumeContent: string,
+  jobTitle: string,
+  companyName: string,
+  jobDescription?: string
+): Promise<string> {
+  return await pRetry(
+    async () => {
+      try {
+        const jobContext = jobDescription 
+          ? `\n\nJOB DESCRIPTION:\n${jobDescription}` 
+          : '';
+
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert career coach specializing in crafting compelling, personalized cover letters. Write professional cover letters that highlight relevant experience, demonstrate genuine interest in the role, and show cultural fit."
+            },
+            {
+              role: "user",
+              content: `Write a professional cover letter for the following position using my resume:
+
+POSITION: ${jobTitle}
+COMPANY: ${companyName}${jobContext}
+
+MY RESUME:
+${resumeContent}
+
+Write a compelling cover letter that:
+- Opens with a strong, specific statement about why I'm interested in this role
+- Highlights 2-3 key achievements from my resume that are most relevant to this position
+- Demonstrates understanding of the company and the role
+- Shows enthusiasm and cultural fit
+- Closes with a clear call to action
+- Is concise (3-4 paragraphs, under 400 words)
+- Uses a professional but personable tone
+- Avoids clichés and generic statements
+
+Return ONLY the cover letter text, no additional formatting or explanations.`
+            }
+          ],
+          max_completion_tokens: 1500
+        });
+
+        const content = response.choices[0]?.message?.content || "";
+        return content.trim();
+      } catch (error: any) {
+        if (isRateLimitError(error)) {
+          throw error;
+        }
+        throw new AbortError(error);
+      }
+    },
+    {
+      retries: 3,
+      minTimeout: 2000,
+      maxTimeout: 10000,
+      factor: 2,
+    }
+  );
+}

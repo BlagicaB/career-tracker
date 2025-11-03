@@ -1,6 +1,6 @@
 import { 
-  type User, 
-  type InsertUser,
+  type User,
+  type UpsertUser,
   type Application,
   type InsertApplication,
   type Resume,
@@ -19,386 +19,60 @@ import {
 import { randomUUID } from "crypto";
 
 export interface IStorage {
-  // Users
+  // Replit Auth - User operations (IMPORTANT: mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
-  // Applications
-  getApplications(): Promise<Application[]>;
-  getApplication(id: string): Promise<Application | undefined>;
-  createApplication(application: InsertApplication): Promise<Application>;
-  updateApplication(id: string, application: Partial<InsertApplication>): Promise<Application | undefined>;
-  deleteApplication(id: string): Promise<boolean>;
+  // Applications (filtered by userId)
+  getApplications(userId: string): Promise<Application[]>;
+  getApplication(id: string, userId: string): Promise<Application | undefined>;
+  createApplication(application: InsertApplication, userId: string): Promise<Application>;
+  updateApplication(id: string, application: Partial<InsertApplication>, userId: string): Promise<Application | undefined>;
+  deleteApplication(id: string, userId: string): Promise<boolean>;
   
-  // Resumes
-  getResumes(): Promise<Resume[]>;
-  getResume(id: string): Promise<Resume | undefined>;
-  createResume(resume: InsertResume): Promise<Resume>;
-  updateResume(id: string, resume: Partial<InsertResume>): Promise<Resume | undefined>;
-  deleteResume(id: string): Promise<boolean>;
+  // Resumes (filtered by userId)
+  getResumes(userId: string): Promise<Resume[]>;
+  getResume(id: string, userId: string): Promise<Resume | undefined>;
+  createResume(resume: InsertResume, userId: string): Promise<Resume>;
+  updateResume(id: string, resume: Partial<InsertResume>, userId: string): Promise<Resume | undefined>;
+  deleteResume(id: string, userId: string): Promise<boolean>;
   
-  // Cover Letters
-  getCoverLetters(): Promise<CoverLetter[]>;
-  getCoverLetter(id: string): Promise<CoverLetter | undefined>;
-  createCoverLetter(coverLetter: InsertCoverLetter): Promise<CoverLetter>;
-  updateCoverLetter(id: string, coverLetter: Partial<InsertCoverLetter>): Promise<CoverLetter | undefined>;
-  deleteCoverLetter(id: string): Promise<boolean>;
+  // Cover Letters (filtered by userId)
+  getCoverLetters(userId: string): Promise<CoverLetter[]>;
+  getCoverLetter(id: string, userId: string): Promise<CoverLetter | undefined>;
+  createCoverLetter(coverLetter: InsertCoverLetter, userId: string): Promise<CoverLetter>;
+  updateCoverLetter(id: string, coverLetter: Partial<InsertCoverLetter>, userId: string): Promise<CoverLetter | undefined>;
+  deleteCoverLetter(id: string, userId: string): Promise<boolean>;
   
-  // Contacts
-  getContacts(): Promise<Contact[]>;
-  getContact(id: string): Promise<Contact | undefined>;
-  createContact(contact: InsertContact): Promise<Contact>;
-  updateContact(id: string, contact: Partial<InsertContact>): Promise<Contact | undefined>;
-  deleteContact(id: string): Promise<boolean>;
+  // Contacts (filtered by userId)
+  getContacts(userId: string): Promise<Contact[]>;
+  getContact(id: string, userId: string): Promise<Contact | undefined>;
+  createContact(contact: InsertContact, userId: string): Promise<Contact>;
+  updateContact(id: string, contact: Partial<InsertContact>, userId: string): Promise<Contact | undefined>;
+  deleteContact(id: string, userId: string): Promise<boolean>;
   
-  // Skills
-  getSkills(): Promise<Skill[]>;
-  getSkill(id: string): Promise<Skill | undefined>;
-  createSkill(skill: InsertSkill): Promise<Skill>;
-  updateSkill(id: string, skill: Partial<InsertSkill>): Promise<Skill | undefined>;
-  deleteSkill(id: string): Promise<boolean>;
+  // Skills (filtered by userId)
+  getSkills(userId: string): Promise<Skill[]>;
+  getSkill(id: string, userId: string): Promise<Skill | undefined>;
+  createSkill(skill: InsertSkill, userId: string): Promise<Skill>;
+  updateSkill(id: string, skill: Partial<InsertSkill>, userId: string): Promise<Skill | undefined>;
+  deleteSkill(id: string, userId: string): Promise<boolean>;
   
-  // Goals
-  getGoals(): Promise<Goal[]>;
-  getGoal(id: string): Promise<Goal | undefined>;
-  createGoal(goal: InsertGoal): Promise<Goal>;
-  updateGoal(id: string, goal: Partial<InsertGoal>): Promise<Goal | undefined>;
-  deleteGoal(id: string): Promise<boolean>;
+  // Goals (filtered by userId)
+  getGoals(userId: string): Promise<Goal[]>;
+  getGoal(id: string, userId: string): Promise<Goal | undefined>;
+  createGoal(goal: InsertGoal, userId: string): Promise<Goal>;
+  updateGoal(id: string, goal: Partial<InsertGoal>, userId: string): Promise<Goal | undefined>;
+  deleteGoal(id: string, userId: string): Promise<boolean>;
   
-  // Job Folders
-  getJobFolders(): Promise<JobFolder[]>;
-  getJobFolder(id: string): Promise<JobFolder | undefined>;
-  createJobFolder(jobFolder: InsertJobFolder): Promise<JobFolder>;
-  updateJobFolder(id: string, jobFolder: Partial<InsertJobFolder>): Promise<JobFolder | undefined>;
-  deleteJobFolder(id: string): Promise<boolean>;
+  // Job Folders (filtered by userId)
+  getJobFolders(userId: string): Promise<JobFolder[]>;
+  getJobFolder(id: string, userId: string): Promise<JobFolder | undefined>;
+  createJobFolder(jobFolder: InsertJobFolder, userId: string): Promise<JobFolder>;
+  updateJobFolder(id: string, jobFolder: Partial<InsertJobFolder>, userId: string): Promise<JobFolder | undefined>;
+  deleteJobFolder(id: string, userId: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private applications: Map<string, Application>;
-  private resumes: Map<string, Resume>;
-  private coverLetters: Map<string, CoverLetter>;
-  private contacts: Map<string, Contact>;
-  private skills: Map<string, Skill>;
-  private goals: Map<string, Goal>;
-  private jobFolders: Map<string, JobFolder>;
-
-  constructor() {
-    this.users = new Map();
-    this.applications = new Map();
-    this.resumes = new Map();
-    this.coverLetters = new Map();
-    this.contacts = new Map();
-    this.skills = new Map();
-    this.goals = new Map();
-    this.jobFolders = new Map();
-  }
-
-  // Users
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
-
-  // Applications
-  async getApplications(): Promise<Application[]> {
-    return Array.from(this.applications.values());
-  }
-
-  async getApplication(id: string): Promise<Application | undefined> {
-    return this.applications.get(id);
-  }
-
-  async createApplication(insertApplication: InsertApplication): Promise<Application> {
-    const id = randomUUID();
-    const application: Application = {
-      id,
-      company: insertApplication.company,
-      role: insertApplication.role,
-      location: insertApplication.location ?? null,
-      status: insertApplication.status ?? "applied",
-      priority: insertApplication.priority ?? "medium",
-      appliedDate: new Date(),
-      salary: insertApplication.salary ?? null,
-      jobUrl: insertApplication.jobUrl ?? null,
-      referral: insertApplication.referral ?? null,
-      notes: insertApplication.notes ?? null,
-      nextFollowUp: insertApplication.nextFollowUp ?? null,
-      offerAmount: insertApplication.offerAmount ?? null,
-      jobType: insertApplication.jobType ?? null,
-      resumeId: insertApplication.resumeId ?? null,
-      coverLetterId: insertApplication.coverLetterId ?? null,
-    };
-    this.applications.set(id, application);
-    return application;
-  }
-
-  async updateApplication(id: string, updates: Partial<InsertApplication>): Promise<Application | undefined> {
-    const existing = this.applications.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.applications.set(id, updated);
-    return updated;
-  }
-
-  async deleteApplication(id: string): Promise<boolean> {
-    return this.applications.delete(id);
-  }
-
-  // Resumes
-  async getResumes(): Promise<Resume[]> {
-    return Array.from(this.resumes.values());
-  }
-
-  async getResume(id: string): Promise<Resume | undefined> {
-    return this.resumes.get(id);
-  }
-
-  async createResume(insertResume: InsertResume): Promise<Resume> {
-    const id = randomUUID();
-    const resume: Resume = {
-      id,
-      title: insertResume.title,
-      uploadDate: new Date(),
-      fileSize: insertResume.fileSize ?? null,
-      tags: insertResume.tags ?? null,
-      content: insertResume.content ?? null,
-    };
-    this.resumes.set(id, resume);
-    return resume;
-  }
-
-  async updateResume(id: string, updates: Partial<InsertResume>): Promise<Resume | undefined> {
-    const existing = this.resumes.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.resumes.set(id, updated);
-    return updated;
-  }
-
-  async deleteResume(id: string): Promise<boolean> {
-    return this.resumes.delete(id);
-  }
-
-  // Cover Letters
-  async getCoverLetters(): Promise<CoverLetter[]> {
-    return Array.from(this.coverLetters.values());
-  }
-
-  async getCoverLetter(id: string): Promise<CoverLetter | undefined> {
-    return this.coverLetters.get(id);
-  }
-
-  async createCoverLetter(insertCoverLetter: InsertCoverLetter): Promise<CoverLetter> {
-    const id = randomUUID();
-    const now = new Date();
-    const coverLetter: CoverLetter = {
-      id,
-      title: insertCoverLetter.title,
-      company: insertCoverLetter.company ?? null,
-      role: insertCoverLetter.role ?? null,
-      createdDate: now,
-      lastModified: now,
-      tags: insertCoverLetter.tags ?? null,
-      content: insertCoverLetter.content ?? null,
-    };
-    this.coverLetters.set(id, coverLetter);
-    return coverLetter;
-  }
-
-  async updateCoverLetter(id: string, updates: Partial<InsertCoverLetter>): Promise<CoverLetter | undefined> {
-    const existing = this.coverLetters.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates, lastModified: new Date() };
-    this.coverLetters.set(id, updated);
-    return updated;
-  }
-
-  async deleteCoverLetter(id: string): Promise<boolean> {
-    return this.coverLetters.delete(id);
-  }
-
-  // Contacts
-  async getContacts(): Promise<Contact[]> {
-    return Array.from(this.contacts.values());
-  }
-
-  async getContact(id: string): Promise<Contact | undefined> {
-    return this.contacts.get(id);
-  }
-
-  async createContact(insertContact: InsertContact): Promise<Contact> {
-    const id = randomUUID();
-    const contact: Contact = {
-      id,
-      name: insertContact.name,
-      title: insertContact.title,
-      company: insertContact.company,
-      email: insertContact.email ?? null,
-      linkedinUrl: insertContact.linkedinUrl ?? null,
-      howMet: insertContact.howMet ?? null,
-      status: insertContact.status ?? "active",
-      notes: insertContact.notes ?? null,
-      createdDate: new Date(),
-    };
-    this.contacts.set(id, contact);
-    return contact;
-  }
-
-  async updateContact(id: string, updates: Partial<InsertContact>): Promise<Contact | undefined> {
-    const existing = this.contacts.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.contacts.set(id, updated);
-    return updated;
-  }
-
-  async deleteContact(id: string): Promise<boolean> {
-    return this.contacts.delete(id);
-  }
-
-  // Skills
-  async getSkills(): Promise<Skill[]> {
-    return Array.from(this.skills.values());
-  }
-
-  async getSkill(id: string): Promise<Skill | undefined> {
-    return this.skills.get(id);
-  }
-
-  async createSkill(insertSkill: InsertSkill): Promise<Skill> {
-    const id = randomUUID();
-    const skill: Skill = {
-      id,
-      name: insertSkill.name,
-      category: insertSkill.category,
-      proficiency: insertSkill.proficiency ?? 0,
-    };
-    this.skills.set(id, skill);
-    return skill;
-  }
-
-  async updateSkill(id: string, updates: Partial<InsertSkill>): Promise<Skill | undefined> {
-    const existing = this.skills.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.skills.set(id, updated);
-    return updated;
-  }
-
-  async deleteSkill(id: string): Promise<boolean> {
-    return this.skills.delete(id);
-  }
-
-  // Goals
-  async getGoals(): Promise<Goal[]> {
-    return Array.from(this.goals.values());
-  }
-
-  async getGoal(id: string): Promise<Goal | undefined> {
-    return this.goals.get(id);
-  }
-
-  async createGoal(insertGoal: InsertGoal): Promise<Goal> {
-    const id = randomUUID();
-    const goal: Goal = {
-      id,
-      title: insertGoal.title,
-      description: insertGoal.description ?? null,
-      category: insertGoal.category,
-      progress: insertGoal.progress ?? 0,
-      targetDate: insertGoal.targetDate ?? null,
-      status: insertGoal.status ?? "in-progress",
-    };
-    this.goals.set(id, goal);
-    return goal;
-  }
-
-  async updateGoal(id: string, updates: Partial<InsertGoal>): Promise<Goal | undefined> {
-    const existing = this.goals.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.goals.set(id, updated);
-    return updated;
-  }
-
-  async deleteGoal(id: string): Promise<boolean> {
-    return this.goals.delete(id);
-  }
-
-  // Job Folders
-  async getJobFolders(): Promise<JobFolder[]> {
-    return Array.from(this.jobFolders.values());
-  }
-
-  async getJobFolder(id: string): Promise<JobFolder | undefined> {
-    return this.jobFolders.get(id);
-  }
-
-  async createJobFolder(insertJobFolder: InsertJobFolder): Promise<JobFolder> {
-    const id = randomUUID();
-    const now = new Date();
-    const jobFolder: JobFolder = {
-      id,
-      jobTitle: insertJobFolder.jobTitle,
-      company: insertJobFolder.company,
-      location: insertJobFolder.location ?? null,
-      salary: insertJobFolder.salary ?? null,
-      jobDescription: insertJobFolder.jobDescription ?? null,
-      jobRequirements: insertJobFolder.jobRequirements ?? null,
-      jobUrl: insertJobFolder.jobUrl ?? null,
-      companyResearch: insertJobFolder.companyResearch ?? null,
-      companyHistory: insertJobFolder.companyHistory ?? null,
-      companyCurrent: insertJobFolder.companyCurrent ?? null,
-      companyChallenges: insertJobFolder.companyChallenges ?? null,
-      companyCulture: insertJobFolder.companyCulture ?? null,
-      hiringManagerName: insertJobFolder.hiringManagerName ?? null,
-      hiringManagerTitle: insertJobFolder.hiringManagerTitle ?? null,
-      hiringManagerLinkedin: insertJobFolder.hiringManagerLinkedin ?? null,
-      hiringManagerBackground: insertJobFolder.hiringManagerBackground ?? null,
-      resumeId: insertJobFolder.resumeId ?? null,
-      coverLetterId: insertJobFolder.coverLetterId ?? null,
-      resumeAnalysis: insertJobFolder.resumeAnalysis ?? null,
-      interviewNotes: insertJobFolder.interviewNotes ?? null,
-      questions: insertJobFolder.questions ?? null,
-      status: insertJobFolder.status ?? "researching",
-      createdDate: now,
-      lastModified: now,
-      applicationId: insertJobFolder.applicationId ?? null,
-    };
-    this.jobFolders.set(id, jobFolder);
-    return jobFolder;
-  }
-
-  async updateJobFolder(id: string, updates: Partial<InsertJobFolder>): Promise<JobFolder | undefined> {
-    const existing = this.jobFolders.get(id);
-    if (!existing) return undefined;
-    const updated = { 
-      ...existing, 
-      ...updates,
-      lastModified: new Date(),
-    };
-    this.jobFolders.set(id, updated);
-    return updated;
-  }
-
-  async deleteJobFolder(id: string): Promise<boolean> {
-    return this.jobFolders.delete(id);
-  }
-}
 
 export class DbStorage implements IStorage {
   private db;
@@ -414,242 +88,252 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async upsertUser(userData: UpsertUser): Promise<User> {
     const { users } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(users).where(eq(users.username, username));
-    return result[0];
+    const [user] = await this.db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const { users } = await import("@shared/schema");
-    const result = await this.db.insert(users).values(insertUser).returning();
-    return result[0];
-  }
-
-  async getApplications(): Promise<Application[]> {
-    const { applications } = await import("@shared/schema");
-    return await this.db.select().from(applications);
-  }
-
-  async getApplication(id: string): Promise<Application | undefined> {
+  async getApplications(userId: string): Promise<Application[]> {
     const { applications } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(applications).where(eq(applications.id, id));
+    return await this.db.select().from(applications).where(eq(applications.userId, userId));
+  }
+
+  async getApplication(id: string, userId: string): Promise<Application | undefined> {
+    const { applications } = await import("@shared/schema");
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.select().from(applications).where(and(eq(applications.id, id), eq(applications.userId, userId)));
     return result[0];
   }
 
-  async createApplication(insertApplication: InsertApplication): Promise<Application> {
+  async createApplication(insertApplication: InsertApplication, userId: string): Promise<Application> {
     const { applications } = await import("@shared/schema");
-    const result = await this.db.insert(applications).values(insertApplication).returning();
+    const result = await this.db.insert(applications).values({ ...insertApplication, userId }).returning();
     return result[0];
   }
 
-  async updateApplication(id: string, updates: Partial<InsertApplication>): Promise<Application | undefined> {
+  async updateApplication(id: string, updates: Partial<InsertApplication>, userId: string): Promise<Application | undefined> {
     const { applications } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.update(applications).set(updates).where(eq(applications.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.update(applications).set(updates).where(and(eq(applications.id, id), eq(applications.userId, userId))).returning();
     return result[0];
   }
 
-  async deleteApplication(id: string): Promise<boolean> {
+  async deleteApplication(id: string, userId: string): Promise<boolean> {
     const { applications } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.delete(applications).where(eq(applications.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.delete(applications).where(and(eq(applications.id, id), eq(applications.userId, userId))).returning();
     return result.length > 0;
   }
 
-  async getResumes(): Promise<Resume[]> {
-    const { resumes } = await import("@shared/schema");
-    return await this.db.select().from(resumes);
-  }
-
-  async getResume(id: string): Promise<Resume | undefined> {
+  async getResumes(userId: string): Promise<Resume[]> {
     const { resumes } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(resumes).where(eq(resumes.id, id));
+    return await this.db.select().from(resumes).where(eq(resumes.userId, userId));
+  }
+
+  async getResume(id: string, userId: string): Promise<Resume | undefined> {
+    const { resumes } = await import("@shared/schema");
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.select().from(resumes).where(and(eq(resumes.id, id), eq(resumes.userId, userId)));
     return result[0];
   }
 
-  async createResume(insertResume: InsertResume): Promise<Resume> {
+  async createResume(insertResume: InsertResume, userId: string): Promise<Resume> {
     const { resumes } = await import("@shared/schema");
-    const result = await this.db.insert(resumes).values(insertResume).returning();
+    const result = await this.db.insert(resumes).values({ ...insertResume, userId }).returning();
     return result[0];
   }
 
-  async updateResume(id: string, updates: Partial<InsertResume>): Promise<Resume | undefined> {
+  async updateResume(id: string, updates: Partial<InsertResume>, userId: string): Promise<Resume | undefined> {
     const { resumes } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.update(resumes).set(updates).where(eq(resumes.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.update(resumes).set(updates).where(and(eq(resumes.id, id), eq(resumes.userId, userId))).returning();
     return result[0];
   }
 
-  async deleteResume(id: string): Promise<boolean> {
+  async deleteResume(id: string, userId: string): Promise<boolean> {
     const { resumes } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.delete(resumes).where(eq(resumes.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.delete(resumes).where(and(eq(resumes.id, id), eq(resumes.userId, userId))).returning();
     return result.length > 0;
   }
 
-  async getCoverLetters(): Promise<CoverLetter[]> {
-    const { coverLetters } = await import("@shared/schema");
-    return await this.db.select().from(coverLetters);
-  }
-
-  async getCoverLetter(id: string): Promise<CoverLetter | undefined> {
+  async getCoverLetters(userId: string): Promise<CoverLetter[]> {
     const { coverLetters } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(coverLetters).where(eq(coverLetters.id, id));
+    return await this.db.select().from(coverLetters).where(eq(coverLetters.userId, userId));
+  }
+
+  async getCoverLetter(id: string, userId: string): Promise<CoverLetter | undefined> {
+    const { coverLetters } = await import("@shared/schema");
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.select().from(coverLetters).where(and(eq(coverLetters.id, id), eq(coverLetters.userId, userId)));
     return result[0];
   }
 
-  async createCoverLetter(insertCoverLetter: InsertCoverLetter): Promise<CoverLetter> {
+  async createCoverLetter(insertCoverLetter: InsertCoverLetter, userId: string): Promise<CoverLetter> {
     const { coverLetters } = await import("@shared/schema");
-    const result = await this.db.insert(coverLetters).values(insertCoverLetter).returning();
+    const result = await this.db.insert(coverLetters).values({ ...insertCoverLetter, userId }).returning();
     return result[0];
   }
 
-  async updateCoverLetter(id: string, updates: Partial<InsertCoverLetter>): Promise<CoverLetter | undefined> {
+  async updateCoverLetter(id: string, updates: Partial<InsertCoverLetter>, userId: string): Promise<CoverLetter | undefined> {
     const { coverLetters } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
+    const { eq, and } = await import("drizzle-orm");
     const updatedValues = { ...updates, lastModified: new Date() };
-    const result = await this.db.update(coverLetters).set(updatedValues).where(eq(coverLetters.id, id)).returning();
+    const result = await this.db.update(coverLetters).set(updatedValues).where(and(eq(coverLetters.id, id), eq(coverLetters.userId, userId))).returning();
     return result[0];
   }
 
-  async deleteCoverLetter(id: string): Promise<boolean> {
+  async deleteCoverLetter(id: string, userId: string): Promise<boolean> {
     const { coverLetters } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.delete(coverLetters).where(eq(coverLetters.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.delete(coverLetters).where(and(eq(coverLetters.id, id), eq(coverLetters.userId, userId))).returning();
     return result.length > 0;
   }
 
-  async getContacts(): Promise<Contact[]> {
-    const { contacts } = await import("@shared/schema");
-    return await this.db.select().from(contacts);
-  }
-
-  async getContact(id: string): Promise<Contact | undefined> {
+  async getContacts(userId: string): Promise<Contact[]> {
     const { contacts } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(contacts).where(eq(contacts.id, id));
+    return await this.db.select().from(contacts).where(eq(contacts.userId, userId));
+  }
+
+  async getContact(id: string, userId: string): Promise<Contact | undefined> {
+    const { contacts } = await import("@shared/schema");
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.select().from(contacts).where(and(eq(contacts.id, id), eq(contacts.userId, userId)));
     return result[0];
   }
 
-  async createContact(insertContact: InsertContact): Promise<Contact> {
+  async createContact(insertContact: InsertContact, userId: string): Promise<Contact> {
     const { contacts } = await import("@shared/schema");
-    const result = await this.db.insert(contacts).values(insertContact).returning();
+    const result = await this.db.insert(contacts).values({ ...insertContact, userId }).returning();
     return result[0];
   }
 
-  async updateContact(id: string, updates: Partial<InsertContact>): Promise<Contact | undefined> {
+  async updateContact(id: string, updates: Partial<InsertContact>, userId: string): Promise<Contact | undefined> {
     const { contacts } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.update(contacts).set(updates).where(eq(contacts.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.update(contacts).set(updates).where(and(eq(contacts.id, id), eq(contacts.userId, userId))).returning();
     return result[0];
   }
 
-  async deleteContact(id: string): Promise<boolean> {
+  async deleteContact(id: string, userId: string): Promise<boolean> {
     const { contacts } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.delete(contacts).where(eq(contacts.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.delete(contacts).where(and(eq(contacts.id, id), eq(contacts.userId, userId))).returning();
     return result.length > 0;
   }
 
-  async getSkills(): Promise<Skill[]> {
-    const { skills } = await import("@shared/schema");
-    return await this.db.select().from(skills);
-  }
-
-  async getSkill(id: string): Promise<Skill | undefined> {
+  async getSkills(userId: string): Promise<Skill[]> {
     const { skills } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(skills).where(eq(skills.id, id));
+    return await this.db.select().from(skills).where(eq(skills.userId, userId));
+  }
+
+  async getSkill(id: string, userId: string): Promise<Skill | undefined> {
+    const { skills } = await import("@shared/schema");
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.select().from(skills).where(and(eq(skills.id, id), eq(skills.userId, userId)));
     return result[0];
   }
 
-  async createSkill(insertSkill: InsertSkill): Promise<Skill> {
+  async createSkill(insertSkill: InsertSkill, userId: string): Promise<Skill> {
     const { skills } = await import("@shared/schema");
-    const result = await this.db.insert(skills).values(insertSkill).returning();
+    const result = await this.db.insert(skills).values({ ...insertSkill, userId }).returning();
     return result[0];
   }
 
-  async updateSkill(id: string, updates: Partial<InsertSkill>): Promise<Skill | undefined> {
+  async updateSkill(id: string, updates: Partial<InsertSkill>, userId: string): Promise<Skill | undefined> {
     const { skills } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.update(skills).set(updates).where(eq(skills.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.update(skills).set(updates).where(and(eq(skills.id, id), eq(skills.userId, userId))).returning();
     return result[0];
   }
 
-  async deleteSkill(id: string): Promise<boolean> {
+  async deleteSkill(id: string, userId: string): Promise<boolean> {
     const { skills } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.delete(skills).where(eq(skills.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.delete(skills).where(and(eq(skills.id, id), eq(skills.userId, userId))).returning();
     return result.length > 0;
   }
 
-  async getGoals(): Promise<Goal[]> {
-    const { goals } = await import("@shared/schema");
-    return await this.db.select().from(goals);
-  }
-
-  async getGoal(id: string): Promise<Goal | undefined> {
+  async getGoals(userId: string): Promise<Goal[]> {
     const { goals } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(goals).where(eq(goals.id, id));
+    return await this.db.select().from(goals).where(eq(goals.userId, userId));
+  }
+
+  async getGoal(id: string, userId: string): Promise<Goal | undefined> {
+    const { goals } = await import("@shared/schema");
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
     return result[0];
   }
 
-  async createGoal(insertGoal: InsertGoal): Promise<Goal> {
+  async createGoal(insertGoal: InsertGoal, userId: string): Promise<Goal> {
     const { goals } = await import("@shared/schema");
-    const result = await this.db.insert(goals).values(insertGoal).returning();
+    const result = await this.db.insert(goals).values({ ...insertGoal, userId }).returning();
     return result[0];
   }
 
-  async updateGoal(id: string, updates: Partial<InsertGoal>): Promise<Goal | undefined> {
+  async updateGoal(id: string, updates: Partial<InsertGoal>, userId: string): Promise<Goal | undefined> {
     const { goals } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.update(goals).set(updates).where(eq(goals.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.update(goals).set(updates).where(and(eq(goals.id, id), eq(goals.userId, userId))).returning();
     return result[0];
   }
 
-  async deleteGoal(id: string): Promise<boolean> {
+  async deleteGoal(id: string, userId: string): Promise<boolean> {
     const { goals } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.delete(goals).where(eq(goals.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.delete(goals).where(and(eq(goals.id, id), eq(goals.userId, userId))).returning();
     return result.length > 0;
   }
 
-  async getJobFolders(): Promise<JobFolder[]> {
-    const { jobFolders } = await import("@shared/schema");
-    return await this.db.select().from(jobFolders);
-  }
-
-  async getJobFolder(id: string): Promise<JobFolder | undefined> {
+  async getJobFolders(userId: string): Promise<JobFolder[]> {
     const { jobFolders } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    const result = await this.db.select().from(jobFolders).where(eq(jobFolders.id, id));
+    return await this.db.select().from(jobFolders).where(eq(jobFolders.userId, userId));
+  }
+
+  async getJobFolder(id: string, userId: string): Promise<JobFolder | undefined> {
+    const { jobFolders } = await import("@shared/schema");
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.select().from(jobFolders).where(and(eq(jobFolders.id, id), eq(jobFolders.userId, userId)));
     return result[0];
   }
 
-  async createJobFolder(insertJobFolder: InsertJobFolder): Promise<JobFolder> {
+  async createJobFolder(insertJobFolder: InsertJobFolder, userId: string): Promise<JobFolder> {
     const { jobFolders } = await import("@shared/schema");
-    const result = await this.db.insert(jobFolders).values(insertJobFolder).returning();
+    const result = await this.db.insert(jobFolders).values({ ...insertJobFolder, userId }).returning();
     return result[0];
   }
 
-  async updateJobFolder(id: string, updates: Partial<InsertJobFolder>): Promise<JobFolder | undefined> {
+  async updateJobFolder(id: string, updates: Partial<InsertJobFolder>, userId: string): Promise<JobFolder | undefined> {
     const { jobFolders } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
+    const { eq, and } = await import("drizzle-orm");
     const updatedValues = { ...updates, lastModified: new Date() };
-    const result = await this.db.update(jobFolders).set(updatedValues).where(eq(jobFolders.id, id)).returning();
+    const result = await this.db.update(jobFolders).set(updatedValues).where(and(eq(jobFolders.id, id), eq(jobFolders.userId, userId))).returning();
     return result[0];
   }
 
-  async deleteJobFolder(id: string): Promise<boolean> {
+  async deleteJobFolder(id: string, userId: string): Promise<boolean> {
     const { jobFolders } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    const result = await this.db.delete(jobFolders).where(eq(jobFolders.id, id)).returning();
+    const { eq, and } = await import("drizzle-orm");
+    const result = await this.db.delete(jobFolders).where(and(eq(jobFolders.id, id), eq(jobFolders.userId, userId))).returning();
     return result.length > 0;
   }
 }

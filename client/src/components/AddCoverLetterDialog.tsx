@@ -20,12 +20,13 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { InsertCoverLetter, Resume } from "@shared/schema";
+import type { InsertCoverLetter, Resume, CoverLetter } from "@shared/schema";
 import { Sparkles } from "lucide-react";
 
 interface AddCoverLetterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  coverLetter?: CoverLetter;
   initialValues?: {
     title?: string;
     company?: string;
@@ -37,16 +38,19 @@ interface AddCoverLetterDialogProps {
 export function AddCoverLetterDialog({
   open,
   onOpenChange,
+  coverLetter,
   initialValues,
   onSuccess,
 }: AddCoverLetterDialogProps) {
   const { toast } = useToast();
+  const isEditing = !!coverLetter;
+  
   const [formData, setFormData] = useState({
-    title: initialValues?.title || "",
-    company: initialValues?.company || "",
-    role: initialValues?.role || "",
-    tags: "",
-    content: "",
+    title: coverLetter?.title || initialValues?.title || "",
+    company: coverLetter?.company || initialValues?.company || "",
+    role: coverLetter?.role || initialValues?.role || "",
+    tags: coverLetter?.tags?.join(", ") || "",
+    content: coverLetter?.content || "",
   });
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [jobDescription, setJobDescription] = useState<string>("");
@@ -56,28 +60,43 @@ export function AddCoverLetterDialog({
   });
 
   useEffect(() => {
-    if (open && initialValues) {
-      setFormData({
-        title: initialValues?.title || "",
-        company: initialValues?.company || "",
-        role: initialValues?.role || "",
-        tags: "",
-        content: "",
-      });
+    if (open) {
+      if (coverLetter) {
+        setFormData({
+          title: coverLetter.title,
+          company: coverLetter.company || "",
+          role: coverLetter.role || "",
+          tags: coverLetter.tags?.join(", ") || "",
+          content: coverLetter.content || "",
+        });
+      } else if (initialValues) {
+        setFormData({
+          title: initialValues?.title || "",
+          company: initialValues?.company || "",
+          role: initialValues?.role || "",
+          tags: "",
+          content: "",
+        });
+      }
       setJobDescription("");
       setSelectedResumeId("");
     }
-  }, [open, initialValues]);
+  }, [open, coverLetter, initialValues]);
 
-  const createMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async (data: InsertCoverLetter) => {
-      const res = await apiRequest("POST", "/api/cover-letters", data);
-      return await res.json();
+      if (isEditing && coverLetter) {
+        const res = await apiRequest("PATCH", `/api/cover-letters/${coverLetter.id}`, data);
+        return await res.json();
+      } else {
+        const res = await apiRequest("POST", "/api/cover-letters", data);
+        return await res.json();
+      }
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Cover letter added successfully",
+        description: isEditing ? "Cover letter updated successfully" : "Cover letter added successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/cover-letters"] });
       resetForm();
@@ -89,7 +108,7 @@ export function AddCoverLetterDialog({
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add cover letter",
+        description: error.message || (isEditing ? "Failed to update cover letter" : "Failed to add cover letter"),
         variant: "destructive",
       });
     },
@@ -153,14 +172,14 @@ export function AddCoverLetterDialog({
       content: formData.content || undefined,
     };
     
-    createMutation.mutate(coverLetterData);
+    saveMutation.mutate(coverLetterData);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Cover Letter</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Cover Letter" : "Add New Cover Letter"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
@@ -301,13 +320,15 @@ export function AddCoverLetterDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={createMutation.isPending}
+              disabled={saveMutation.isPending}
               data-testid="button-cancel"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit">
-              {createMutation.isPending ? "Adding..." : "Add Cover Letter"}
+            <Button type="submit" disabled={saveMutation.isPending} data-testid="button-submit">
+              {saveMutation.isPending 
+                ? (isEditing ? "Saving..." : "Adding...") 
+                : (isEditing ? "Save Changes" : "Add Cover Letter")}
             </Button>
           </DialogFooter>
         </form>

@@ -13,12 +13,12 @@ interface JobTypeOverviewProps {
 }
 
 const defaultStats: JobTypeStats[] = [
-  { category: "Frontend", count: 8, color: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
-  { category: "Full Stack", count: 6, color: "bg-purple-500/10 text-purple-700 dark:text-purple-400" },
-  { category: "Backend", count: 4, color: "bg-green-500/10 text-green-700 dark:text-green-400" },
-  { category: "DevOps", count: 3, color: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
-  { category: "Mobile", count: 2, color: "bg-pink-500/10 text-pink-700 dark:text-pink-400" },
-  { category: "Data", count: 1, color: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400" },
+  { category: "Full-time", count: 10, color: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+  { category: "Part-time", count: 4, color: "bg-purple-500/10 text-purple-700 dark:text-purple-400" },
+  { category: "Contract", count: 4, color: "bg-green-500/10 text-green-700 dark:text-green-400" },
+  { category: "Temporary", count: 3, color: "bg-orange-500/10 text-orange-700 dark:text-orange-400" },
+  { category: "Internship", count: 2, color: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
+  { category: "Freelance", count: 1, color: "bg-pink-500/10 text-pink-700 dark:text-pink-400" },
 ];
 
 export function JobTypeOverview({ stats = defaultStats }: JobTypeOverviewProps) {

@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { EditHiringManagerDialog } from "@/components/EditHiringManagerDialog";
-import type { JobFolder, Resume } from "@shared/schema";
+import type { JobFolder, Resume, InsertResume } from "@shared/schema";
 import { 
   ArrowLeft, 
   Briefcase, 
@@ -22,7 +22,8 @@ import {
   MessageSquare,
   Loader2,
   Calendar,
-  Edit
+  Edit,
+  Upload
 } from "lucide-react";
 import {
   Select,
@@ -32,6 +33,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDistanceToNow } from "date-fns";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface JobFolderDetailProps {
   folder: JobFolder;
@@ -44,6 +49,7 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
   const [interviewNotes, setInterviewNotes] = useState(folder.interviewNotes || "");
   const [questions, setQuestions] = useState(folder.questions || "");
   const [managerDialogOpen, setManagerDialogOpen] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   const { data: resumes = [] } = useQuery<Resume[]>({
     queryKey: ["/api/resumes"],
@@ -72,12 +78,17 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
   });
 
   const analyzeResumeMutation = useMutation({
-    mutationFn: async (resumeId: string) => {
-      const resume = resumes.find(r => r.id === resumeId);
-      if (!resume) throw new Error("Resume not found");
+    mutationFn: async ({ resumeId, resumeContent }: { resumeId: string; resumeContent?: string | null }) => {
+      let content = resumeContent;
+      
+      if (!content) {
+        const resume = resumes.find(r => r.id === resumeId);
+        if (!resume) throw new Error("Resume not found");
+        content = resume.content;
+      }
       
       const res = await apiRequest("POST", `/api/job-folders/${folder.id}/analyze-resume`, {
-        resumeContent: resume.content
+        resumeContent: content
       });
       return await res.json();
     },
@@ -120,10 +131,124 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
     },
   });
 
+  const createResumeMutation = useMutation({
+    mutationFn: async (data: InsertResume) => {
+      const res = await apiRequest("POST", "/api/resumes", data);
+      return await res.json();
+    },
+    onSuccess: (newResume: Resume) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/resumes"] });
+      updateMutation.mutate({ resumeId: newResume.id });
+      
+      if (folder.jobDescription) {
+        analyzeResumeMutation.mutate({ 
+          resumeId: newResume.id, 
+          resumeContent: newResume.content 
+        });
+      }
+      
+      toast({
+        title: "Resume uploaded",
+        description: folder.jobDescription 
+          ? "Your resume has been saved and will be analyzed."
+          : "Your resume has been saved. Add a job description to enable analysis.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save resume",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const processFile = async (file: File) => {
+    if (!file) return;
+    
+    if (processing) {
+      toast({
+        title: "Please wait",
+        description: "A file is already being processed",
+      });
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!file.type.includes("pdf")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select a PDF file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProcessing(true);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      let extractedText = "";
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(" ");
+        extractedText += pageText + "\n";
+      }
+      
+      extractedText = extractedText.trim();
+      
+      if (!extractedText) {
+        toast({
+          title: "No text found",
+          description: "The PDF appears to be empty or contains only images",
+          variant: "destructive",
+        });
+        setProcessing(false);
+        return;
+      }
+
+      createResumeMutation.mutate({
+        title: `${folder.company} - ${folder.jobTitle} Resume`,
+        content: extractedText,
+      });
+    } catch (error) {
+      console.error("PDF parsing error:", error);
+      toast({
+        title: "Failed to process PDF",
+        description: "There was an error reading your PDF file",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      processFile(file);
+      e.target.value = "";
+    }
+  };
+
   const handleResumeSelect = (resumeId: string) => {
     updateMutation.mutate({ resumeId });
     if (folder.jobDescription) {
-      analyzeResumeMutation.mutate(resumeId);
+      analyzeResumeMutation.mutate({ resumeId });
     }
   };
 
@@ -259,7 +384,7 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
               {folder.resumeId && folder.jobDescription && !resumeAnalysis && (
                 <Button 
                   className="w-full mt-3" 
-                  onClick={() => analyzeResumeMutation.mutate(folder.resumeId!)}
+                  onClick={() => analyzeResumeMutation.mutate({ resumeId: folder.resumeId! })}
                   disabled={analyzeResumeMutation.isPending}
                   data-testid="button-analyze-resume"
                 >
@@ -528,10 +653,34 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
             <Card>
               <CardContent className="py-12 text-center">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No resume analysis yet</h3>
+                <h3 className="text-lg font-semibold mb-2">Upload & Analyze Your Resume</h3>
                 <p className="text-muted-foreground mb-6">
-                  Select a resume and analyze it against this job posting to get AI-powered recommendations.
+                  Upload a resume PDF to get AI-powered analysis and recommendations tailored to this job posting.
                 </p>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileInput}
+                  style={{ display: "none" }}
+                  id="resume-upload-input"
+                  data-testid="input-resume-upload"
+                />
+                <Button
+                  onClick={() => document.getElementById("resume-upload-input")?.click()}
+                  disabled={processing || !folder.jobDescription}
+                  data-testid="button-upload-resume"
+                >
+                  {processing ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing PDF...</>
+                  ) : (
+                    <><Upload className="h-4 w-4 mr-2" />Upload Resume PDF</>
+                  )}
+                </Button>
+                {!folder.jobDescription && (
+                  <p className="text-sm text-muted-foreground mt-4">
+                    Add a job description first to enable resume analysis
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

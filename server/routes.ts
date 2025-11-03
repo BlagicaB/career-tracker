@@ -12,7 +12,7 @@ import {
   insertGoalSchema,
   insertJobFolderSchema,
 } from "@shared/schema";
-import { extractBusinessCardInfo, analyzeResumeForJob, conductCompanyResearch } from "./openai";
+import { extractBusinessCardInfo, analyzeResumeForJob, conductCompanyResearch, generateCoverLetter } from "./openai";
 
 const businessCardScanSchema = z.object({
   imageData: z.string().min(1, "Image data is required"),
@@ -559,6 +559,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Company research error:", error);
       res.status(500).json({ 
         error: "Failed to conduct company research",
+        details: error.message 
+      });
+    }
+  });
+
+  // AI-powered cover letter generation
+  app.post("/api/generate-cover-letter", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const { resumeContent, jobTitle, company, jobDescription } = req.body;
+
+      if (!resumeContent) {
+        return res.status(400).json({ error: "Resume content is required" });
+      }
+      
+      if (!jobTitle) {
+        return res.status(400).json({ error: "Job title is required" });
+      }
+      
+      if (!company) {
+        return res.status(400).json({ error: "Company name is required" });
+      }
+
+      const coverLetter = await generateCoverLetter(
+        resumeContent,
+        jobTitle,
+        company,
+        jobDescription
+      );
+      
+      res.json({ coverLetter });
+    } catch (error: any) {
+      console.error("Cover letter generation error:", error);
+      res.status(500).json({ 
+        error: "Failed to generate cover letter",
         details: error.message 
       });
     }

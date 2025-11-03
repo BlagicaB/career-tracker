@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
+import { isAuthenticated } from "./replitAuth";
 import {
   insertApplicationSchema,
   insertResumeSchema,
@@ -18,36 +19,59 @@ const businessCardScanSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // User profile endpoint (unprotected but requires login)
+  app.get("/api/me", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const user = req.user as any;
+    const userId = user.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ message: "Invalid session" });
+    }
+    const dbUser = await storage.getUser(userId);
+    if (!dbUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(dbUser);
+  });
+
   // Applications
-  app.get("/api/applications", async (req, res) => {
+  app.get("/api/applications", isAuthenticated, async (req, res) => {
     try {
-      const applications = await storage.getApplications();
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const applications = await storage.getApplications(userId);
       res.json(applications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch applications" });
     }
   });
 
-  app.post("/api/applications", async (req, res) => {
+  app.post("/api/applications", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertApplicationSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const application = await storage.createApplication(result.data);
+      const application = await storage.createApplication(result.data, userId);
       res.json(application);
     } catch (error) {
       res.status(500).json({ error: "Failed to create application" });
     }
   });
 
-  app.patch("/api/applications/:id", async (req, res) => {
+  app.patch("/api/applications/:id", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertApplicationSchema.partial().safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const application = await storage.updateApplication(req.params.id, result.data);
+      const application = await storage.updateApplication(req.params.id, result.data, userId);
       if (!application) {
         return res.status(404).json({ error: "Application not found" });
       }
@@ -57,9 +81,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/applications/:id", async (req, res) => {
+  app.delete("/api/applications/:id", isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteApplication(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const success = await storage.deleteApplication(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ error: "Application not found" });
       }
@@ -70,35 +96,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Resumes
-  app.get("/api/resumes", async (req, res) => {
+  app.get("/api/resumes", isAuthenticated, async (req, res) => {
     try {
-      const resumes = await storage.getResumes();
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const resumes = await storage.getResumes(userId);
       res.json(resumes);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch resumes" });
     }
   });
 
-  app.post("/api/resumes", async (req, res) => {
+  app.post("/api/resumes", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertResumeSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const resume = await storage.createResume(result.data);
+      const resume = await storage.createResume(result.data, userId);
       res.json(resume);
     } catch (error) {
       res.status(500).json({ error: "Failed to create resume" });
     }
   });
 
-  app.patch("/api/resumes/:id", async (req, res) => {
+  app.patch("/api/resumes/:id", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertResumeSchema.partial().safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const resume = await storage.updateResume(req.params.id, result.data);
+      const resume = await storage.updateResume(req.params.id, result.data, userId);
       if (!resume) {
         return res.status(404).json({ error: "Resume not found" });
       }
@@ -108,9 +140,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/resumes/:id", async (req, res) => {
+  app.delete("/api/resumes/:id", isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteResume(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const success = await storage.deleteResume(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ error: "Resume not found" });
       }
@@ -121,35 +155,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cover Letters
-  app.get("/api/cover-letters", async (req, res) => {
+  app.get("/api/cover-letters", isAuthenticated, async (req, res) => {
     try {
-      const coverLetters = await storage.getCoverLetters();
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const coverLetters = await storage.getCoverLetters(userId);
       res.json(coverLetters);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch cover letters" });
     }
   });
 
-  app.post("/api/cover-letters", async (req, res) => {
+  app.post("/api/cover-letters", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertCoverLetterSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const coverLetter = await storage.createCoverLetter(result.data);
+      const coverLetter = await storage.createCoverLetter(result.data, userId);
       res.json(coverLetter);
     } catch (error) {
       res.status(500).json({ error: "Failed to create cover letter" });
     }
   });
 
-  app.patch("/api/cover-letters/:id", async (req, res) => {
+  app.patch("/api/cover-letters/:id", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertCoverLetterSchema.partial().safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const coverLetter = await storage.updateCoverLetter(req.params.id, result.data);
+      const coverLetter = await storage.updateCoverLetter(req.params.id, result.data, userId);
       if (!coverLetter) {
         return res.status(404).json({ error: "Cover letter not found" });
       }
@@ -159,9 +199,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cover-letters/:id", async (req, res) => {
+  app.delete("/api/cover-letters/:id", isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteCoverLetter(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const success = await storage.deleteCoverLetter(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ error: "Cover letter not found" });
       }
@@ -172,35 +214,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Contacts
-  app.get("/api/contacts", async (req, res) => {
+  app.get("/api/contacts", isAuthenticated, async (req, res) => {
     try {
-      const contacts = await storage.getContacts();
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const contacts = await storage.getContacts(userId);
       res.json(contacts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch contacts" });
     }
   });
 
-  app.post("/api/contacts", async (req, res) => {
+  app.post("/api/contacts", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertContactSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const contact = await storage.createContact(result.data);
+      const contact = await storage.createContact(result.data, userId);
       res.json(contact);
     } catch (error) {
       res.status(500).json({ error: "Failed to create contact" });
     }
   });
 
-  app.patch("/api/contacts/:id", async (req, res) => {
+  app.patch("/api/contacts/:id", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertContactSchema.partial().safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const contact = await storage.updateContact(req.params.id, result.data);
+      const contact = await storage.updateContact(req.params.id, result.data, userId);
       if (!contact) {
         return res.status(404).json({ error: "Contact not found" });
       }
@@ -210,9 +258,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/contacts/:id", async (req, res) => {
+  app.delete("/api/contacts/:id", isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteContact(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const success = await storage.deleteContact(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ error: "Contact not found" });
       }
@@ -223,35 +273,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Skills
-  app.get("/api/skills", async (req, res) => {
+  app.get("/api/skills", isAuthenticated, async (req, res) => {
     try {
-      const skills = await storage.getSkills();
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const skills = await storage.getSkills(userId);
       res.json(skills);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch skills" });
     }
   });
 
-  app.post("/api/skills", async (req, res) => {
+  app.post("/api/skills", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertSkillSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const skill = await storage.createSkill(result.data);
+      const skill = await storage.createSkill(result.data, userId);
       res.json(skill);
     } catch (error) {
       res.status(500).json({ error: "Failed to create skill" });
     }
   });
 
-  app.patch("/api/skills/:id", async (req, res) => {
+  app.patch("/api/skills/:id", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertSkillSchema.partial().safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const skill = await storage.updateSkill(req.params.id, result.data);
+      const skill = await storage.updateSkill(req.params.id, result.data, userId);
       if (!skill) {
         return res.status(404).json({ error: "Skill not found" });
       }
@@ -261,9 +317,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/skills/:id", async (req, res) => {
+  app.delete("/api/skills/:id", isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteSkill(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const success = await storage.deleteSkill(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ error: "Skill not found" });
       }
@@ -274,35 +332,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Goals
-  app.get("/api/goals", async (req, res) => {
+  app.get("/api/goals", isAuthenticated, async (req, res) => {
     try {
-      const goals = await storage.getGoals();
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const goals = await storage.getGoals(userId);
       res.json(goals);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch goals" });
     }
   });
 
-  app.post("/api/goals", async (req, res) => {
+  app.post("/api/goals", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertGoalSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const goal = await storage.createGoal(result.data);
+      const goal = await storage.createGoal(result.data, userId);
       res.json(goal);
     } catch (error) {
       res.status(500).json({ error: "Failed to create goal" });
     }
   });
 
-  app.patch("/api/goals/:id", async (req, res) => {
+  app.patch("/api/goals/:id", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertGoalSchema.partial().safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const goal = await storage.updateGoal(req.params.id, result.data);
+      const goal = await storage.updateGoal(req.params.id, result.data, userId);
       if (!goal) {
         return res.status(404).json({ error: "Goal not found" });
       }
@@ -312,9 +376,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/goals/:id", async (req, res) => {
+  app.delete("/api/goals/:id", isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteGoal(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const success = await storage.deleteGoal(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ error: "Goal not found" });
       }
@@ -325,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Business card scanning endpoint
-  app.post("/api/scan/business-card", async (req, res) => {
+  app.post("/api/scan/business-card", isAuthenticated, async (req, res) => {
     try {
       const result = businessCardScanSchema.safeParse(req.body);
       if (!result.success) {
@@ -347,18 +413,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Job Folders
-  app.get("/api/job-folders", async (req, res) => {
+  app.get("/api/job-folders", isAuthenticated, async (req, res) => {
     try {
-      const jobFolders = await storage.getJobFolders();
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const jobFolders = await storage.getJobFolders(userId);
       res.json(jobFolders);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch job folders" });
     }
   });
 
-  app.get("/api/job-folders/:id", async (req, res) => {
+  app.get("/api/job-folders/:id", isAuthenticated, async (req, res) => {
     try {
-      const jobFolder = await storage.getJobFolder(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const jobFolder = await storage.getJobFolder(req.params.id, userId);
       if (!jobFolder) {
         return res.status(404).json({ error: "Job folder not found" });
       }
@@ -368,26 +438,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/job-folders", async (req, res) => {
+  app.post("/api/job-folders", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertJobFolderSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const jobFolder = await storage.createJobFolder(result.data);
+      const jobFolder = await storage.createJobFolder(result.data, userId);
       res.json(jobFolder);
     } catch (error) {
       res.status(500).json({ error: "Failed to create job folder" });
     }
   });
 
-  app.patch("/api/job-folders/:id", async (req, res) => {
+  app.patch("/api/job-folders/:id", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const result = insertJobFolderSchema.partial().safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const jobFolder = await storage.updateJobFolder(req.params.id, result.data);
+      const jobFolder = await storage.updateJobFolder(req.params.id, result.data, userId);
       if (!jobFolder) {
         return res.status(404).json({ error: "Job folder not found" });
       }
@@ -397,9 +471,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/job-folders/:id", async (req, res) => {
+  app.delete("/api/job-folders/:id", isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteJobFolder(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const success = await storage.deleteJobFolder(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ error: "Job folder not found" });
       }
@@ -410,10 +486,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI-powered job folder endpoints
-  app.post("/api/job-folders/:id/analyze-resume", async (req, res) => {
+  app.post("/api/job-folders/:id/analyze-resume", isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const userId = user.claims?.sub;
       const { resumeContent } = req.body;
-      const jobFolder = await storage.getJobFolder(req.params.id);
+      const jobFolder = await storage.getJobFolder(req.params.id, userId);
       
       if (!jobFolder) {
         return res.status(404).json({ error: "Job folder not found" });
@@ -432,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Save the analysis to the job folder
       await storage.updateJobFolder(req.params.id, {
         resumeAnalysis: JSON.stringify(analysis)
-      });
+      }, userId);
       
       res.json(analysis);
     } catch (error: any) {
@@ -444,9 +522,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/job-folders/:id/research-company", async (req, res) => {
+  app.post("/api/job-folders/:id/research-company", isAuthenticated, async (req, res) => {
     try {
-      const jobFolder = await storage.getJobFolder(req.params.id);
+      const user = req.user as any;
+      const userId = user.claims?.sub;
+      const jobFolder = await storage.getJobFolder(req.params.id, userId);
       
       if (!jobFolder) {
         return res.status(404).json({ error: "Job folder not found" });
@@ -472,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyCurrent: research.currentState,
         companyChallenges: research.challenges,
         companyCulture: research.culture,
-      });
+      }, userId);
       
       res.json(research);
     } catch (error: any) {

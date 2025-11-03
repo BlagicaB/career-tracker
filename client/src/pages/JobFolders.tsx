@@ -59,14 +59,14 @@ export default function JobFolders() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold mb-2">Job Folders</h1>
+            <h1 className="text-3xl font-semibold mb-2">Job Research</h1>
             <p className="text-muted-foreground">
-              AI-powered job application preparation
+              Research companies, analyze fit, and prepare customized materials before applying
             </p>
           </div>
         </div>
         <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading job folders...</p>
+          <p className="text-muted-foreground">Loading job research...</p>
         </div>
       </div>
     );
@@ -76,14 +76,14 @@ export default function JobFolders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold mb-2">Job Folders</h1>
+          <h1 className="text-3xl font-semibold mb-2">Job Research</h1>
           <p className="text-muted-foreground">
-            AI-powered job application preparation
+            Research companies, analyze fit, and prepare customized materials before applying
           </p>
         </div>
         <Button onClick={() => setDialogOpen(true)} data-testid="button-add-job-folder">
           <Plus className="h-4 w-4 mr-2" />
-          New Job Folder
+          Start New Research
         </Button>
       </div>
 
@@ -102,13 +102,13 @@ export default function JobFolders() {
         <Card>
           <CardContent className="py-12 text-center">
             <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No job folders yet</h3>
-            <p className="text-muted-foreground mb-6">
-              Create your first job folder to organize application materials, company research, and AI-powered resume analysis.
+            <h3 className="text-lg font-semibold mb-2">Start Your Job Research</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Before applying, research the company and role. Get AI-powered company insights, analyze how your resume matches the job requirements, and prepare customized materials.
             </p>
             <Button onClick={() => setDialogOpen(true)} data-testid="button-create-first-folder">
               <Plus className="h-4 w-4 mr-2" />
-              Create Your First Folder
+              Research Your First Job
             </Button>
           </CardContent>
         </Card>

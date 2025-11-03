@@ -13,8 +13,8 @@ import { ThemeToggle } from "./ThemeToggle";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Job Research", url: "/job-research", icon: FolderKanban },
   { title: "Applications", url: "/applications", icon: Briefcase },
-  { title: "Job Folders", url: "/job-folders", icon: FolderKanban },
   { title: "Networking", url: "/networking", icon: Users },
   { title: "Skills", url: "/skills", icon: Award },
   { title: "Goals", url: "/goals", icon: Target },

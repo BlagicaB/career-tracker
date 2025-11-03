@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { DashboardMetricCard } from "@/components/DashboardMetricCard";
 import { ApplicationsTable } from "@/components/ApplicationsTable";
-import { Briefcase, Users, TrendingUp, Target, Award } from "lucide-react";
+import { Briefcase, Users, TrendingUp, Target, Award, Search, FileEdit, Send, BarChart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow, isFuture } from "date-fns";
+import { Link } from "wouter";
 import type { Application, Contact, Skill, Goal } from "@shared/schema";
 
 export default function Dashboard() {
@@ -74,11 +76,99 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-semibold mb-2">Career & Job Tracker</h1>
         <p className="text-muted-foreground">
-          Track your job search progress and upcoming activities
+          Your complete job search companion
         </p>
       </div>
+
+      {/* Getting Started Section */}
+      {totalApplications === 0 && (
+        <Card className="p-8 bg-gradient-to-br from-primary/5 via-background to-background border-2">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">Getting Started</h2>
+              <p className="text-muted-foreground">
+                Follow this workflow to make your job applications stand out
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                    1
+                  </div>
+                  <Search className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold">Research the Job</h3>
+                <p className="text-sm text-muted-foreground">
+                  Use Job Research to analyze the company, understand requirements, and get AI-powered insights
+                </p>
+                <Link href="/job-research">
+                  <Button variant="outline" size="sm" className="w-full" data-testid="button-start-research">
+                    Start Research
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                    2
+                  </div>
+                  <FileEdit className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold">Customize Materials</h3>
+                <p className="text-sm text-muted-foreground">
+                  Tailor your resume and cover letter to match the job requirements and company culture
+                </p>
+                <Link href="/resumes">
+                  <Button variant="outline" size="sm" className="w-full" data-testid="button-manage-resumes">
+                    Manage Resumes
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                    3
+                  </div>
+                  <Send className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold">Apply & Track</h3>
+                <p className="text-sm text-muted-foreground">
+                  After applying, track your application status, interviews, and follow-ups
+                </p>
+                <Link href="/applications">
+                  <Button variant="outline" size="sm" className="w-full" data-testid="button-track-applications">
+                    Track Applications
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                    4
+                  </div>
+                  <BarChart className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold">Build Your Network</h3>
+                <p className="text-sm text-muted-foreground">
+                  Connect with people at target companies and track your professional relationships
+                </p>
+                <Link href="/networking">
+                  <Button variant="outline" size="sm" className="w-full" data-testid="button-manage-network">
+                    Manage Network
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardMetricCard

@@ -14,13 +14,17 @@ export default function Landing() {
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6">
               Career & Job Tracker
             </h1>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground mb-8">
+            <p className="mx-auto max-w-2xl text-lg text-muted-foreground mb-4">
               Streamline your job search with a comprehensive platform to track applications,
               manage networking contacts, monitor skills development, and set career goals.
             </p>
+            <p className="mx-auto max-w-xl text-base text-muted-foreground mb-8">
+              Create your personal account to keep track of all your career progress in one secure place.
+              Your data stays private and accessible only to you.
+            </p>
             <a href={getLoginUrl()}>
               <Button size="lg" className="text-lg px-8" data-testid="button-login">
-                Log In with Replit
+                Create Account
               </Button>
             </a>
           </div>
@@ -147,11 +151,12 @@ export default function Landing() {
           <CardContent className="p-8 text-center">
             <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
             <p className="text-muted-foreground mb-6">
-              Log in with your Replit account to start tracking your career journey today.
+              Create your account to start tracking your career journey today. All your job applications,
+              contacts, and progress will be saved securely in your personal workspace.
             </p>
             <a href={getLoginUrl()}>
               <Button size="lg" data-testid="button-login-cta">
-                Log In with Replit
+                Create Account
               </Button>
             </a>
           </CardContent>

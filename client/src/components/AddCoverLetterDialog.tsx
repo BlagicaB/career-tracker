@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,20 +18,40 @@ import type { InsertCoverLetter } from "@shared/schema";
 interface AddCoverLetterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialValues?: {
+    title?: string;
+    company?: string;
+    role?: string;
+  };
+  onSuccess?: () => void;
 }
 
 export function AddCoverLetterDialog({
   open,
   onOpenChange,
+  initialValues,
+  onSuccess,
 }: AddCoverLetterDialogProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    title: "",
-    company: "",
-    role: "",
+    title: initialValues?.title || "",
+    company: initialValues?.company || "",
+    role: initialValues?.role || "",
     tags: "",
     content: "",
   });
+
+  useEffect(() => {
+    if (open && initialValues) {
+      setFormData({
+        title: initialValues?.title || "",
+        company: initialValues?.company || "",
+        role: initialValues?.role || "",
+        tags: "",
+        content: "",
+      });
+    }
+  }, [open, initialValues]);
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertCoverLetter) => {
@@ -46,6 +66,9 @@ export function AddCoverLetterDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/cover-letters"] });
       resetForm();
       onOpenChange(false);
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onError: (error: Error) => {
       toast({

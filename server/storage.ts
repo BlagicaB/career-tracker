@@ -400,4 +400,260 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DbStorage implements IStorage {
+  private db;
+
+  constructor(database: any) {
+    this.db = database;
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const { users } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const { users } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(users).where(eq(users.username, username));
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const { users } = await import("@shared/schema");
+    const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async getApplications(): Promise<Application[]> {
+    const { applications } = await import("@shared/schema");
+    return await this.db.select().from(applications);
+  }
+
+  async getApplication(id: string): Promise<Application | undefined> {
+    const { applications } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(applications).where(eq(applications.id, id));
+    return result[0];
+  }
+
+  async createApplication(insertApplication: InsertApplication): Promise<Application> {
+    const { applications } = await import("@shared/schema");
+    const result = await this.db.insert(applications).values(insertApplication).returning();
+    return result[0];
+  }
+
+  async updateApplication(id: string, updates: Partial<InsertApplication>): Promise<Application | undefined> {
+    const { applications } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.update(applications).set(updates).where(eq(applications.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteApplication(id: string): Promise<boolean> {
+    const { applications } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(applications).where(eq(applications.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getResumes(): Promise<Resume[]> {
+    const { resumes } = await import("@shared/schema");
+    return await this.db.select().from(resumes);
+  }
+
+  async getResume(id: string): Promise<Resume | undefined> {
+    const { resumes } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(resumes).where(eq(resumes.id, id));
+    return result[0];
+  }
+
+  async createResume(insertResume: InsertResume): Promise<Resume> {
+    const { resumes } = await import("@shared/schema");
+    const result = await this.db.insert(resumes).values(insertResume).returning();
+    return result[0];
+  }
+
+  async updateResume(id: string, updates: Partial<InsertResume>): Promise<Resume | undefined> {
+    const { resumes } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.update(resumes).set(updates).where(eq(resumes.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteResume(id: string): Promise<boolean> {
+    const { resumes } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(resumes).where(eq(resumes.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getCoverLetters(): Promise<CoverLetter[]> {
+    const { coverLetters } = await import("@shared/schema");
+    return await this.db.select().from(coverLetters);
+  }
+
+  async getCoverLetter(id: string): Promise<CoverLetter | undefined> {
+    const { coverLetters } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(coverLetters).where(eq(coverLetters.id, id));
+    return result[0];
+  }
+
+  async createCoverLetter(insertCoverLetter: InsertCoverLetter): Promise<CoverLetter> {
+    const { coverLetters } = await import("@shared/schema");
+    const result = await this.db.insert(coverLetters).values(insertCoverLetter).returning();
+    return result[0];
+  }
+
+  async updateCoverLetter(id: string, updates: Partial<InsertCoverLetter>): Promise<CoverLetter | undefined> {
+    const { coverLetters } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const updatedValues = { ...updates, lastModified: new Date() };
+    const result = await this.db.update(coverLetters).set(updatedValues).where(eq(coverLetters.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteCoverLetter(id: string): Promise<boolean> {
+    const { coverLetters } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(coverLetters).where(eq(coverLetters.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getContacts(): Promise<Contact[]> {
+    const { contacts } = await import("@shared/schema");
+    return await this.db.select().from(contacts);
+  }
+
+  async getContact(id: string): Promise<Contact | undefined> {
+    const { contacts } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(contacts).where(eq(contacts.id, id));
+    return result[0];
+  }
+
+  async createContact(insertContact: InsertContact): Promise<Contact> {
+    const { contacts } = await import("@shared/schema");
+    const result = await this.db.insert(contacts).values(insertContact).returning();
+    return result[0];
+  }
+
+  async updateContact(id: string, updates: Partial<InsertContact>): Promise<Contact | undefined> {
+    const { contacts } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.update(contacts).set(updates).where(eq(contacts.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteContact(id: string): Promise<boolean> {
+    const { contacts } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(contacts).where(eq(contacts.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getSkills(): Promise<Skill[]> {
+    const { skills } = await import("@shared/schema");
+    return await this.db.select().from(skills);
+  }
+
+  async getSkill(id: string): Promise<Skill | undefined> {
+    const { skills } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(skills).where(eq(skills.id, id));
+    return result[0];
+  }
+
+  async createSkill(insertSkill: InsertSkill): Promise<Skill> {
+    const { skills } = await import("@shared/schema");
+    const result = await this.db.insert(skills).values(insertSkill).returning();
+    return result[0];
+  }
+
+  async updateSkill(id: string, updates: Partial<InsertSkill>): Promise<Skill | undefined> {
+    const { skills } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.update(skills).set(updates).where(eq(skills.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteSkill(id: string): Promise<boolean> {
+    const { skills } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(skills).where(eq(skills.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getGoals(): Promise<Goal[]> {
+    const { goals } = await import("@shared/schema");
+    return await this.db.select().from(goals);
+  }
+
+  async getGoal(id: string): Promise<Goal | undefined> {
+    const { goals } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(goals).where(eq(goals.id, id));
+    return result[0];
+  }
+
+  async createGoal(insertGoal: InsertGoal): Promise<Goal> {
+    const { goals } = await import("@shared/schema");
+    const result = await this.db.insert(goals).values(insertGoal).returning();
+    return result[0];
+  }
+
+  async updateGoal(id: string, updates: Partial<InsertGoal>): Promise<Goal | undefined> {
+    const { goals } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.update(goals).set(updates).where(eq(goals.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteGoal(id: string): Promise<boolean> {
+    const { goals } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(goals).where(eq(goals.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getJobFolders(): Promise<JobFolder[]> {
+    const { jobFolders } = await import("@shared/schema");
+    return await this.db.select().from(jobFolders);
+  }
+
+  async getJobFolder(id: string): Promise<JobFolder | undefined> {
+    const { jobFolders } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(jobFolders).where(eq(jobFolders.id, id));
+    return result[0];
+  }
+
+  async createJobFolder(insertJobFolder: InsertJobFolder): Promise<JobFolder> {
+    const { jobFolders } = await import("@shared/schema");
+    const result = await this.db.insert(jobFolders).values(insertJobFolder).returning();
+    return result[0];
+  }
+
+  async updateJobFolder(id: string, updates: Partial<InsertJobFolder>): Promise<JobFolder | undefined> {
+    const { jobFolders } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const updatedValues = { ...updates, lastModified: new Date() };
+    const result = await this.db.update(jobFolders).set(updatedValues).where(eq(jobFolders.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteJobFolder(id: string): Promise<boolean> {
+    const { jobFolders } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(jobFolders).where(eq(jobFolders.id, id)).returning();
+    return result.length > 0;
+  }
+}
+
+import { db } from "./db";
+
+export const storage = new DbStorage(db);

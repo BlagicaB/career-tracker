@@ -9,7 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { EditHiringManagerDialog } from "@/components/EditHiringManagerDialog";
 import { EditBasicInfoDialog } from "@/components/EditBasicInfoDialog";
-import type { JobFolder, Resume, InsertResume } from "@shared/schema";
+import { EditJobDescriptionDialog } from "@/components/EditJobDescriptionDialog";
+import { AddCoverLetterDialog } from "@/components/AddCoverLetterDialog";
+import type { JobFolder, Resume, InsertResume, CoverLetter } from "@shared/schema";
 import { 
   ArrowLeft, 
   Briefcase, 
@@ -24,7 +26,9 @@ import {
   Loader2,
   Calendar,
   Edit,
-  Upload
+  Upload,
+  PenLine,
+  Plus
 } from "lucide-react";
 import {
   Select,
@@ -51,10 +55,16 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
   const [questions, setQuestions] = useState(folder.questions || "");
   const [managerDialogOpen, setManagerDialogOpen] = useState(false);
   const [basicInfoDialogOpen, setBasicInfoDialogOpen] = useState(false);
+  const [descriptionDialogOpen, setDescriptionDialogOpen] = useState(false);
+  const [coverLetterDialogOpen, setCoverLetterDialogOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   const { data: resumes = [] } = useQuery<Resume[]>({
     queryKey: ["/api/resumes"],
+  });
+
+  const { data: coverLetters = [] } = useQuery<CoverLetter[]>({
+    queryKey: ["/api/cover-letters"],
   });
 
   const updateMutation = useMutation({
@@ -336,26 +346,54 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5" />
-              Job Details
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                Job Details
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setDescriptionDialogOpen(true)}
+                data-testid="button-edit-job-description"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {folder.jobDescription && (
-              <div>
-                <h3 className="font-medium mb-2">Description</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {folder.jobDescription}
+            {folder.jobDescription || folder.jobRequirements ? (
+              <>
+                {folder.jobDescription && (
+                  <div>
+                    <h3 className="font-medium mb-2">Description</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {folder.jobDescription}
+                    </p>
+                  </div>
+                )}
+                {folder.jobRequirements && (
+                  <div>
+                    <h3 className="font-medium mb-2">Requirements</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {folder.jobRequirements}
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="py-6 text-center">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  No job description yet. Copy and paste from the job posting to enable AI-powered resume analysis.
                 </p>
-              </div>
-            )}
-            {folder.jobRequirements && (
-              <div>
-                <h3 className="font-medium mb-2">Requirements</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {folder.jobRequirements}
-                </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => setDescriptionDialogOpen(true)}
+                  data-testid="button-add-description"
+                >
+                  Add Job Description
+                </Button>
               </div>
             )}
           </CardContent>
@@ -467,6 +505,52 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
                 </Button>
               </CardContent>
             )}
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <PenLine className="h-4 w-4" />
+                Cover Letter
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {folder.coverLetterId ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Cover letter linked to this job
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const coverLetter = coverLetters.find(cl => cl.id === folder.coverLetterId);
+                      if (coverLetter) {
+                        window.location.href = '/cover-letters';
+                      }
+                    }}
+                    data-testid="button-view-cover-letter"
+                  >
+                    View Cover Letter
+                  </Button>
+                </div>
+              ) : (
+                <div className="py-6 text-center">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    No cover letter yet
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setCoverLetterDialogOpen(true)}
+                    data-testid="button-create-cover-letter"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Cover Letter
+                  </Button>
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -580,9 +664,116 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
           )}
         </TabsContent>
 
-        <TabsContent value="resume-analysis">
-          {resumeAnalysis ? (
-            <div className="space-y-4">
+        <TabsContent value="resume-analysis" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Resume Selection
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {resumes.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No resumes available. Upload a resume PDF to get started.
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileInput}
+                    style={{ display: "none" }}
+                    id="resume-upload-input-tab"
+                    data-testid="input-resume-upload-tab"
+                  />
+                  <Button
+                    onClick={() => document.getElementById("resume-upload-input-tab")?.click()}
+                    disabled={processing || !folder.jobDescription}
+                    data-testid="button-upload-resume-tab"
+                  >
+                    {processing ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing PDF...</>
+                    ) : (
+                      <><Upload className="h-4 w-4 mr-2" />Upload Resume PDF</>
+                    )}
+                  </Button>
+                  {!folder.jobDescription && (
+                    <p className="text-sm text-muted-foreground mt-3">
+                      Add a job description first to enable resume analysis
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Select 
+                    value={folder.resumeId || ""} 
+                    onValueChange={handleResumeSelect}
+                  >
+                    <SelectTrigger data-testid="select-resume-tab">
+                      <SelectValue placeholder="Select a resume to analyze" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resumes.map(resume => (
+                        <SelectItem 
+                          key={resume.id} 
+                          value={resume.id}
+                          data-testid={`resume-option-tab-${resume.id}`}
+                        >
+                          {resume.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileInput}
+                      style={{ display: "none" }}
+                      id="resume-upload-input-tab"
+                      data-testid="input-resume-upload-tab"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => document.getElementById("resume-upload-input-tab")?.click()}
+                      disabled={processing || !folder.jobDescription}
+                      data-testid="button-upload-new-resume"
+                    >
+                      {processing ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</>
+                      ) : (
+                        <><Upload className="h-4 w-4 mr-2" />Upload New Resume</>
+                      )}
+                    </Button>
+                    
+                    {folder.resumeId && folder.jobDescription && (
+                      <Button
+                        onClick={() => analyzeResumeMutation.mutate({ resumeId: folder.resumeId! })}
+                        disabled={analyzeResumeMutation.isPending}
+                        data-testid="button-reanalyze-resume"
+                      >
+                        {analyzeResumeMutation.isPending ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Analyzing...</>
+                        ) : (
+                          <><Sparkles className="h-4 w-4 mr-2" />{resumeAnalysis ? "Re-analyze" : "Analyze"}</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {!folder.jobDescription && (
+                    <p className="text-sm text-muted-foreground">
+                      Add a job description first to enable resume analysis
+                    </p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {resumeAnalysis && (
+            <>
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -662,41 +853,7 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
                   </CardContent>
                 </Card>
               )}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Upload & Analyze Your Resume</h3>
-                <p className="text-muted-foreground mb-6">
-                  Upload a resume PDF to get AI-powered analysis and recommendations tailored to this job posting.
-                </p>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileInput}
-                  style={{ display: "none" }}
-                  id="resume-upload-input"
-                  data-testid="input-resume-upload"
-                />
-                <Button
-                  onClick={() => document.getElementById("resume-upload-input")?.click()}
-                  disabled={processing || !folder.jobDescription}
-                  data-testid="button-upload-resume"
-                >
-                  {processing ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing PDF...</>
-                  ) : (
-                    <><Upload className="h-4 w-4 mr-2" />Upload Resume PDF</>
-                  )}
-                </Button>
-                {!folder.jobDescription && (
-                  <p className="text-sm text-muted-foreground mt-4">
-                    Add a job description first to enable resume analysis
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            </>
           )}
         </TabsContent>
 
@@ -775,6 +932,33 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
           jobUrl: folder.jobUrl || "",
         }}
         onSave={(values) => updateMutation.mutate(values)}
+      />
+
+      <EditJobDescriptionDialog
+        open={descriptionDialogOpen}
+        onOpenChange={setDescriptionDialogOpen}
+        initialValues={{
+          jobDescription: folder.jobDescription || "",
+          jobRequirements: folder.jobRequirements || "",
+        }}
+        onSave={(values) => updateMutation.mutate(values)}
+        isPending={updateMutation.isPending}
+        jobUrl={folder.jobUrl}
+      />
+
+      <AddCoverLetterDialog
+        open={coverLetterDialogOpen}
+        onOpenChange={setCoverLetterDialogOpen}
+        initialValues={{
+          title: `Cover Letter - ${folder.company} - ${folder.jobTitle}`,
+          company: folder.company,
+          role: folder.jobTitle,
+        }}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/cover-letters"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/job-folders"] });
+          onUpdate();
+        }}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,9 +11,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { InsertCoverLetter } from "@shared/schema";
+import type { InsertCoverLetter, Resume } from "@shared/schema";
+import { Sparkles } from "lucide-react";
 
 interface AddCoverLetterDialogProps {
   open: boolean;
@@ -40,6 +48,12 @@ export function AddCoverLetterDialog({
     tags: "",
     content: "",
   });
+  const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+  const [jobDescription, setJobDescription] = useState<string>("");
+
+  const { data: resumes } = useQuery<Resume[]>({
+    queryKey: ["/api/resumes"],
+  });
 
   useEffect(() => {
     if (open && initialValues) {
@@ -50,6 +64,8 @@ export function AddCoverLetterDialog({
         tags: "",
         content: "",
       });
+      setJobDescription("");
+      setSelectedResumeId("");
     }
   }, [open, initialValues]);
 
@@ -79,6 +95,37 @@ export function AddCoverLetterDialog({
     },
   });
 
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const selectedResume = resumes?.find(r => r.id === selectedResumeId);
+      if (!selectedResume || !formData.company || !formData.role) {
+        throw new Error("Please select a resume, enter company and role");
+      }
+
+      const res = await apiRequest("POST", "/api/generate-cover-letter", {
+        resumeContent: selectedResume.content,
+        jobTitle: formData.role,
+        company: formData.company,
+        jobDescription: jobDescription || undefined,
+      });
+      return await res.json();
+    },
+    onSuccess: (data: { coverLetter: string }) => {
+      setFormData({ ...formData, content: data.coverLetter });
+      toast({
+        title: "Success",
+        description: "Cover letter generated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate cover letter",
+        variant: "destructive",
+      });
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       title: "",
@@ -87,6 +134,8 @@ export function AddCoverLetterDialog({
       tags: "",
       content: "",
     });
+    setSelectedResumeId("");
+    setJobDescription("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -172,6 +221,66 @@ export function AddCoverLetterDialog({
               </p>
             </div>
 
+            <div className="space-y-4 p-4 rounded-md border">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="font-medium">AI Cover Letter Generator</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Generate a personalized cover letter using your resume and job details
+              </p>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resume-select">Select Resume *</Label>
+                  <Select value={selectedResumeId} onValueChange={setSelectedResumeId}>
+                    <SelectTrigger id="resume-select" data-testid="select-resume">
+                      <SelectValue placeholder="Choose a resume..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resumes && resumes.length > 0 ? (
+                        resumes.map((resume) => (
+                          <SelectItem key={resume.id} value={resume.id}>
+                            {resume.title}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled>
+                          No resumes available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="job-description">Job Description (Optional)</Label>
+                  <Textarea
+                    id="job-description"
+                    placeholder="Paste the job description here for a more tailored cover letter..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    rows={4}
+                    data-testid="textarea-job-description"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Adding a job description helps generate a more specific cover letter
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => generateMutation.mutate()}
+                  disabled={generateMutation.isPending || !selectedResumeId || !formData.company || !formData.role}
+                  className="w-full"
+                  data-testid="button-generate-ai"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {generateMutation.isPending ? "Generating..." : "Generate with AI"}
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="content">Content</Label>
               <Textarea
@@ -181,7 +290,7 @@ export function AddCoverLetterDialog({
                 onChange={(e) =>
                   setFormData({ ...formData, content: e.target.value })
                 }
-                rows={8}
+                rows={12}
                 data-testid="textarea-content"
               />
             </div>

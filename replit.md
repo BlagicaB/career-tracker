@@ -52,7 +52,7 @@ Client-side routing is handled by Wouter, supporting routes for Dashboard, Job S
 - **class-variance-authority, tailwind-merge, clsx**: Utilities for styling.
 
 ### AI & Integration Services
-- **OpenAI API** (via Replit AI Integrations): GPT-4o for resume analysis, company research, and business card OCR.
+- **OpenAI API** (via Replit AI Integrations): GPT-4o for resume analysis, company research, AI-powered cover letter generation, and business card OCR.
 - **qr-scanner**: QR code scanning.
 
 ### Additional Libraries

@@ -16,7 +16,9 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 
 ### Backend Architecture
 
-The backend uses Node.js with Express.js and TypeScript, designed with a RESTful API architecture. It features a storage abstraction layer, currently implemented with in-memory storage (`MemStorage`), but designed for easy migration to database-backed solutions. Data validation is enforced using Zod. Authentication is planned to be session-based with a PostgreSQL session store.
+The backend uses Node.js with Express.js and TypeScript, designed with a RESTful API architecture. It features a storage abstraction layer implemented with PostgreSQL-backed storage (`DbStorage`) for data persistence. Data validation is enforced using Zod. 
+
+**Authentication**: Implemented using Replit Auth (OpenID Connect) with session-based authentication stored in PostgreSQL. All API routes are protected with `isAuthenticated` middleware. Sessions persist for 7 days and access tokens are automatically refreshed. User data is isolated by userId, ensuring each user only accesses their own data.
 
 ### Database Schema
 

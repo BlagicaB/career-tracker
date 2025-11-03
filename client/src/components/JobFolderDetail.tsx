@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { EditHiringManagerDialog } from "@/components/EditHiringManagerDialog";
+import { EditBasicInfoDialog } from "@/components/EditBasicInfoDialog";
 import type { JobFolder, Resume, InsertResume } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -49,6 +50,7 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
   const [interviewNotes, setInterviewNotes] = useState(folder.interviewNotes || "");
   const [questions, setQuestions] = useState(folder.questions || "");
   const [managerDialogOpen, setManagerDialogOpen] = useState(false);
+  const [basicInfoDialogOpen, setBasicInfoDialogOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   const { data: resumes = [] } = useQuery<Resume[]>({
@@ -277,13 +279,15 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
       </div>
 
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold mb-2">{folder.jobTitle}</h1>
-          <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              {folder.company}
-            </div>
+        <div className="flex-1">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <h1 className="text-3xl font-semibold mb-2">{folder.jobTitle}</h1>
+              <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  {folder.company}
+                </div>
             {folder.location && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
@@ -308,10 +312,20 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
                 View Posting
               </a>
             )}
-          </div>
-          <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            Created {formatDistanceToNow(new Date(folder.createdDate), { addSuffix: true })}
+              </div>
+              <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                Created {formatDistanceToNow(new Date(folder.createdDate), { addSuffix: true })}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setBasicInfoDialogOpen(true)}
+              data-testid="button-edit-basic-info"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <Badge className={getStatusColor(folder.status)}>
@@ -746,6 +760,19 @@ export function JobFolderDetail({ folder, onBack, onUpdate }: JobFolderDetailPro
           hiringManagerTitle: folder.hiringManagerTitle || "",
           hiringManagerLinkedin: folder.hiringManagerLinkedin || "",
           hiringManagerBackground: folder.hiringManagerBackground || "",
+        }}
+        onSave={(values) => updateMutation.mutate(values)}
+      />
+
+      <EditBasicInfoDialog
+        open={basicInfoDialogOpen}
+        onOpenChange={setBasicInfoDialogOpen}
+        initialValues={{
+          company: folder.company,
+          jobTitle: folder.jobTitle,
+          location: folder.location || "",
+          salary: folder.salary || "",
+          jobUrl: folder.jobUrl || "",
         }}
         onSave={(values) => updateMutation.mutate(values)}
       />

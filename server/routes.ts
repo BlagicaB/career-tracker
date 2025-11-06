@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { isAuthenticated } from "./replitAuth";
+
 import {
   insertApplicationSchema,
   insertResumeSchema,
@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Applications
-  app.get("/api/applications", isAuthenticated, async (req, res) => {
+  app.get("/api/applications",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -48,7 +48,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/applications", isAuthenticated, async (req, res) => {
+  app.post("/api/applications", async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/applications/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/applications/:id", async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -81,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/applications/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/applications/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -96,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Resumes
-  app.get("/api/resumes", isAuthenticated, async (req, res) => {
+  app.get("/api/resumes",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -107,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/resumes", isAuthenticated, async (req, res) => {
+  app.post("/api/resumes",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/resumes/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/resumes/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/resumes/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/resumes/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -155,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cover Letters
-  app.get("/api/cover-letters", isAuthenticated, async (req, res) => {
+  app.get("/api/cover-letters",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cover-letters", isAuthenticated, async (req, res) => {
+  app.post("/api/cover-letters",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -181,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/cover-letters/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/cover-letters/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -199,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cover-letters/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/cover-letters/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -214,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Contacts
-  app.get("/api/contacts", isAuthenticated, async (req, res) => {
+  app.get("/api/contacts",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/contacts", isAuthenticated, async (req, res) => {
+  app.post("/api/contacts",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -240,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/contacts/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/contacts/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -258,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/contacts/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/contacts/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -273,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Skills
-  app.get("/api/skills", isAuthenticated, async (req, res) => {
+  app.get("/api/skills",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -284,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/skills", isAuthenticated, async (req, res) => {
+  app.post("/api/skills",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -299,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/skills/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/skills/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/skills/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/skills/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Goals
-  app.get("/api/goals", isAuthenticated, async (req, res) => {
+  app.get("/api/goals",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -343,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/goals", isAuthenticated, async (req, res) => {
+  app.post("/api/goals",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -358,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/goals/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/goals/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -376,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/goals/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/goals/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -391,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Business card scanning endpoint
-  app.post("/api/scan/business-card", isAuthenticated, async (req, res) => {
+  app.post("/api/scan/business-card",  async (req, res) => {
     try {
       const result = businessCardScanSchema.safeParse(req.body);
       if (!result.success) {
@@ -413,7 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Job Folders
-  app.get("/api/job-folders", isAuthenticated, async (req, res) => {
+  app.get("/api/job-folders",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/job-folders/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/job-folders/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -438,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/job-folders", isAuthenticated, async (req, res) => {
+  app.post("/api/job-folders",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -453,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/job-folders/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/job-folders/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -471,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/job-folders/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/job-folders/:id",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -486,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI-powered job folder endpoints
-  app.post("/api/job-folders/:id/analyze-resume", isAuthenticated, async (req, res) => {
+  app.post("/api/job-folders/:id/analyze-resume",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -522,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/job-folders/:id/research-company", isAuthenticated, async (req, res) => {
+  app.post("/api/job-folders/:id/research-company",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;
@@ -565,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI-powered cover letter generation
-  app.post("/api/generate-cover-letter", isAuthenticated, async (req, res) => {
+  app.post("/api/generate-cover-letter",  async (req, res) => {
     try {
       const user = req.user as any;
       const userId = user.claims?.sub;

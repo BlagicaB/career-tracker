@@ -1,23 +1,25 @@
 {
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
-    "noEmit": true,
-    "module": "ESNext",
-    "strict": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
-    "jsx": "preserve",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": ".",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
-    "moduleResolution": "bundler",
+
+    // 👇 let TS resolve your shared alias
     "baseUrl": ".",
-    "types": ["node", "vite/client"],
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["shared/*"]
     }
-  }
+  },
+
+  // 👇 Compile only server code (and vite.config.ts because server/vite.ts imports it)
+  "include": ["server/**/*.ts", "server/**/*.d.ts", "vite.config.ts"],
+
+  // 👇 Don't compile the React app
+  "exclude": ["client", "node_modules"]
 }

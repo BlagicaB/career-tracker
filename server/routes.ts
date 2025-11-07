@@ -19,23 +19,24 @@ const businessCardScanSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // User profile endpoint (unprotected but requires login)
-  app.get("/api/me", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    const user = req.user as any;
-    const userId = user.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Invalid session" });
-    }
-    const dbUser = await storage.getUser(userId);
-    if (!dbUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.json(dbUser);
-  });
+  // --- TEMP auth shim: remove when you add real auth ---
+// Provide a user object so existing code that reads req.user.claims.sub works.
+// You can pass an ID from the client with header: x-user-id: <some-id>
+app.use((req, _res, next) => {
+  const anyReq = req as any;
+  if (!anyReq.user) {
+    anyReq.user = { claims: { sub: (req.headers["x-user-id"] as string) || "demo" } };
+  }
+  next();
+});
 
+  // User profile endpoint (temporary stub)
+app.get("/api/me", async (_req, res) => {
+  // Return a minimal shape the client can tolerate
+  res.json({ authenticated: false });
+});
+
+    
   // Applications
   app.get("/api/applications",  async (req, res) => {
     try {

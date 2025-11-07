@@ -1,15 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
     "outDir": "dist",
-    "rootDir": "server",
+    "rootDir": ".",
+
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    }
   },
-  "include": ["server/**/*.ts", "server/**/*.d.ts"],
+  "include": ["server/**/*.ts", "server/**/*.d.ts", "vite.config.ts"],
   "exclude": ["client", "node_modules"]
 }

@@ -11,7 +11,7 @@ import {
   insertSkillSchema,
   insertGoalSchema,
   insertJobFolderSchema,
-} from "@shared/schema";
+} from "@shared/schema.js";
 import { extractBusinessCardInfo, analyzeResumeForJob, conductCompanyResearch, generateCoverLetter } from "./openai";
 
 const businessCardScanSchema = z.object({

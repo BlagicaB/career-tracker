@@ -15,7 +15,7 @@ import {
   type InsertGoal,
   type JobFolder,
   type InsertJobFolder,
-} from "@shared/schema";
+} from "@shared/schema.js";
 import { randomUUID } from "crypto";
 
 export interface IStorage {

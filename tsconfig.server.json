@@ -1,9 +1,27 @@
-// ALWAYS serve the app on the port specified in the environment variable PORT
-const port = parseInt(process.env.PORT || '5000', 10);
-const server = await registerRoutes(app);
-
-server.listen(
-  { port, host: "0.0.0.0", reusePort: true },
-  () => log(`serving on port ${port}`)
-);
-
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": "."
+  },
+  "include": [
+    "server/**/*.ts",
+    "server/types/**/*.d.ts",
+    "shared/**/*.ts"
+  ],
+  "exclude": [
+    "client/**",
+    "attached_assets/**",
+    "node_modules/**",
+    "vite.config.ts",
+    "server/vite.ts",
+    "**/*.test.ts"
+  ]
+}
